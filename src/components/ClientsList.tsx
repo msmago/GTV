@@ -149,21 +149,22 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
         </button>
       </div>
 
-      <div className="glass rounded-2xl border-none shadow-none overflow-hidden">
+      <div className="md:glass md:rounded-2xl md:border-none md:shadow-none overflow-hidden">
         <div className="p-4 border-b border-white/20 bg-white/10 backdrop-blur-md">
-          <div className="max-w-sm relative">
+          <div className="max-w-md relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
-              placeholder="Filtrar por nome, documento ou contato"
+              placeholder="Nome, documento ou contato"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white/50 border-none rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+              className="w-full pl-9 pr-4 py-3 md:py-2 bg-white border md:bg-white/50 border-slate-200 md:border-none rounded-xl text-sm md:text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
@@ -229,25 +230,84 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
                   </td>
                 </tr>
               ))}
-              {filteredClients.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-20 text-center text-slate-400">
-                    <div className="flex flex-col items-center gap-3">
-                      <Users size={48} className="opacity-20" />
-                      <p>Nenhum cliente encontrado</p>
-                      <button 
-                        onClick={() => { setCurrentClient({}); setShowModal(true); }}
-                        className="text-blue-600 font-bold text-xs hover:underline"
-                      >
-                        ADICIONAR PRIMEIRO CLIENTE
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-slate-100 bg-white">
+          {filteredClients.map((client) => (
+            <div key={client.id} className="p-5 flex flex-col gap-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shadow-sm border border-blue-100">
+                    {client.name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-900 text-base">{client.name}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">ID: {client.id.substring(0, 8)}</p>
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={() => { setCurrentClient(client); setShowModal(true); }}
+                    className="p-3 text-blue-600 bg-blue-50 rounded-xl"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setShowDeleteConfirm(client.id)}
+                    className="p-3 text-red-500 bg-red-50 rounded-xl"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 py-4 px-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dívida Total</label>
+                  <div className="flex items-center gap-1">
+                    <DollarSign size={12} className="text-blue-500" />
+                    <p className="font-bold text-slate-900">{formatCurrency(getClientTotalDebt(client.id))}</p>
+                  </div>
+                </div>
+                <div>
+                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Documento</label>
+                   <p className="text-xs font-medium text-slate-600">{client.document || '---'}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl">
+                  <Phone size={14} className="text-slate-400" />
+                  <span className="text-sm font-medium text-slate-700">{client.phone}</span>
+                </div>
+                {client.email && (
+                  <div className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl">
+                    <Mail size={14} className="text-slate-400" />
+                    <span className="text-sm font-medium text-slate-700 truncate">{client.email}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredClients.length === 0 && (
+          <div className="px-6 py-20 text-center text-slate-400 bg-white">
+            <div className="flex flex-col items-center gap-3">
+              <Users size={48} className="opacity-20" />
+              <p>Nenhum cliente encontrado</p>
+              <button 
+                onClick={() => { setCurrentClient({}); setShowModal(true); }}
+                className="text-blue-600 font-bold text-xs hover:underline"
+              >
+                ADICIONAR PRIMEIRO CLIENTE
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Custom Delete Confirmation Modal */}

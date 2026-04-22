@@ -133,25 +133,26 @@ export default function DebtsList({ createTrigger }: DebtsListProps) {
         </button>
       </div>
 
-      <div className="glass rounded-2xl border-none shadow-none overflow-hidden">
-        <div className="p-4 border-b border-white/20 bg-white/10 backdrop-blur-md flex justify-between items-center">
-          <div className="max-w-sm relative flex-1">
+      <div className="md:glass md:rounded-2xl md:border-none md:shadow-none overflow-hidden">
+        <div className="p-4 border-b border-white/20 bg-white/10 backdrop-blur-md flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="max-w-md w-full relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
               placeholder="Buscar por cliente ou status..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white/50 border-none rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+              className="w-full pl-9 pr-4 py-3 md:py-2 bg-white md:bg-white/50 border border-slate-200 md:border-none rounded-xl text-sm md:text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-500 hover:bg-white/50 rounded-lg transition-all ml-4">
+          <button className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-slate-500 bg-white/50 md:bg-transparent hover:bg-white/80 rounded-lg transition-all md:ml-4 border md:border-none border-slate-100">
             <Filter size={14} />
-            Filtrar
+            Filtrar Resultados
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100">
@@ -212,19 +213,76 @@ export default function DebtsList({ createTrigger }: DebtsListProps) {
                   </td>
                 </tr>
               ))}
-              {filteredDebts.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-20 text-center text-slate-400">
-                    <div className="flex flex-col items-center gap-3">
-                      <CreditCard size={48} className="opacity-20" />
-                      <p>Nenhuma dívida registrada</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden divide-y divide-slate-100 bg-white">
+          {filteredDebts.map((debt) => (
+            <div key={debt.id} className="p-5 flex flex-col gap-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-bold text-slate-900 text-base">{getClientName(debt.clientId)}</p>
+                  <p className="text-xs text-slate-500 line-clamp-1">{debt.description || 'Sem descrição'}</p>
+                </div>
+                <span className={cn("px-2 py-1 rounded-full text-[9px] font-bold uppercase shrink-0", statusMap[debt.status].color)}>
+                  {statusMap[debt.status].label}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between py-4 px-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor</label>
+                  <p className="text-lg font-black text-blue-600">{formatCurrency(debt.amount)}</p>
+                </div>
+                <div className="text-right">
+                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Vencimento</label>
+                   <div className="flex items-center gap-1.5 justify-end text-sm font-semibold text-slate-700">
+                      <Calendar size={14} className="text-slate-400" />
+                      {debt.dueDate ? formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate) : '---'}
+                   </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                  <button 
+                    onClick={() => handleWhatsAppClick(debt.clientId, debt.amount)}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-50 text-green-600 rounded-xl text-xs font-bold border border-green-100"
+                  >
+                    <Smartphone size={16} />
+                    COBRAR
+                  </button>
+                  <button 
+                    onClick={() => { 
+                      const date = debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : new Date(debt.dueDate);
+                      setCurrentDebt({ ...debt, dueDate: date.toISOString().split('T')[0] }); 
+                      setShowModal(true); 
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100"
+                  >
+                    <Edit2 size={16} />
+                    EDITAR
+                  </button>
+                  <button 
+                    onClick={() => setShowDeleteConfirm(debt.id)}
+                    className="p-3 bg-red-50 text-red-500 rounded-xl border border-red-100"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {filteredDebts.length === 0 && (
+          <div className="px-6 py-20 text-center text-slate-400 bg-white">
+            <div className="flex flex-col items-center gap-3">
+              <CreditCard size={48} className="opacity-20" />
+              <p>Nenhuma dívida registrada</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Custom Delete Confirmation Modal */}

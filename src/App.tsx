@@ -14,7 +14,9 @@ import {
   DollarSign,
   AlertCircle,
   MessageSquare,
-  Filter
+  Filter,
+  Menu,
+  X as CloseIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './context/AuthContext';
@@ -32,6 +34,7 @@ export default function App() {
   const { user, loading, loginWithGoogle, loginWithEmail, registerWithEmail, logout } = useAuth();
   const [activeView, setActiveView] = React.useState<View>('dashboard');
   const [showCreateDropdown, setShowCreateDropdown] = React.useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [createTrigger, setCreateTrigger] = React.useState<{ type: 'client' | 'debt', timestamp: number } | null>(null);
 
   // Auth States
@@ -105,18 +108,7 @@ export default function App() {
             </p>
           </div>
 
-          <div className="relative z-10 flex gap-8 items-center pt-12 border-t border-blue-500/50">
-            <div className="flex -space-x-3">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-blue-600 bg-blue-400 overflow-hidden">
-                  <img src={`https://i.pravatar.cc/150?u=${i}`} alt="user" />
-                </div>
-              ))}
-            </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-200">
-              Utilizado por +500 <br /> gestores financeiros
-            </p>
-          </div>
+          {/* Footer content removed */}
 
           {/* Abstract Decorations */}
           <div className="absolute top-1/2 right-0 w-96 h-96 bg-blue-500 rounded-full blur-[120px] opacity-50 -translate-y-1/2 translate-x-1/2"></div>
@@ -244,10 +236,42 @@ export default function App() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans text-slate-800 p-4 gap-4">
+    <div className="flex h-screen overflow-hidden font-sans text-slate-800 bg-slate-50 md:p-4 md:gap-4 flex-col md:flex-row">
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+        <div className="flex items-center gap-2 text-blue-600 font-bold">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
+            <CreditCard size={18} />
+          </div>
+          <span>CobrançaPro</span>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+        >
+          {isMobileMenuOpen ? <CloseIcon size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Sidebar Overlay (Mobile) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
-      <aside className="w-64 glass rounded-3xl flex flex-col p-6 h-full overflow-hidden shrink-0">
-        <div className="p-6">
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-72 bg-white md:bg-white/40 md:backdrop-blur-xl md:glass md:rounded-3xl flex flex-col p-6 h-full overflow-hidden shrink-0 z-50 transition-transform duration-300 transform md:relative md:translate-x-0 md:p-6",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
+        <div className="p-4 hidden md:block">
           <div className="flex items-center gap-3 text-blue-600 font-bold text-xl">
             <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
               <CreditCard size={18} />
@@ -256,15 +280,15 @@ export default function App() {
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1">
+        <nav className="flex-1 px-4 md:px-0 space-y-1 mt-8 md:mt-0">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveView(item.id as View)}
+                onClick={() => { setActiveView(item.id as View); setIsMobileMenuOpen(false); }}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all mb-1",
+                  "w-full flex items-center gap-3 px-4 py-4 md:py-3 rounded-xl text-sm font-medium transition-all mb-1",
                   activeView === item.id 
                     ? "sidebar-item-active" 
                     : "text-slate-500 hover:bg-white/50 hover:text-slate-900"
@@ -277,32 +301,32 @@ export default function App() {
           })}
         </nav>
 
-        <div className="p-4 glass rounded-2xl mt-auto">
-          <div className="flex items-center gap-3 px-4 py-3 bg-white/40 backdrop-blur-sm rounded-xl mb-3 border border-white/30">
+        <div className="p-4 glass md:bg-transparent rounded-2xl mt-auto border border-white/40 md:border-none">
+          <div className="flex items-center gap-3 px-4 py-3 bg-white/60 md:bg-white/40 backdrop-blur-sm rounded-xl mb-3 border border-white/50">
             <img 
               src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
-              className="w-8 h-8 rounded-full border border-slate-200"
+              className="w-10 h-10 md:w-8 md:h-8 rounded-full border border-white shadow-sm"
               alt={user.displayName || 'User'}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold truncate">{user.displayName}</p>
+              <p className="text-sm md:text-xs font-bold truncate">{user.displayName}</p>
               <p className="text-[10px] text-slate-500 truncate uppercase tracking-wider">Operador Admin</p>
             </div>
           </div>
           <button 
             onClick={logout}
-            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg transition-all"
+            className="w-full flex items-center gap-3 px-4 py-3 md:py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
           >
             <LogOut size={18} />
-            Sair
+            Sair do Sistema
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden gap-4">
-        {/* Header */}
-        <header className="h-16 glass rounded-2xl flex items-center justify-between px-6 shrink-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:gap-4">
+        {/* Header (Desktop Only) */}
+        <header className="hidden md:flex h-16 glass rounded-2xl items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4 flex-1">
             <h2 className="text-lg font-bold text-blue-900 capitalize shrink-0">
               {menuItems.find(m => m.id === activeView)?.label || activeView}
@@ -323,7 +347,7 @@ export default function App() {
         </header>
 
         {/* View Content */}
-        <div className="flex-1 overflow-y-auto glass rounded-3xl p-8">
+        <div className="flex-1 overflow-y-auto glass md:rounded-3xl p-4 md:p-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}
@@ -333,6 +357,11 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="h-full"
             >
+              <div className="md:hidden mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  {menuItems.find(m => m.id === activeView)?.label || activeView}
+                </h2>
+              </div>
               {activeView === 'dashboard' && <Dashboard />}
               {activeView === 'kanban' && <Kanban />}
               {activeView === 'clients' && <ClientsList createTrigger={createTrigger?.type === 'client' ? createTrigger.timestamp : undefined} />}

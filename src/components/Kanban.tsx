@@ -124,12 +124,12 @@ export default function Kanban() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4">
-        <div className="flex gap-6 h-full min-w-[1200px]">
+      <div className="flex-1 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
+        <div className="flex gap-4 md:gap-6 h-full min-w-max md:min-w-[1200px]">
           {COLUMNS.map((column) => {
             const columnDebts = debts.filter(d => d.status === column.id);
             return (
-              <div key={column.id} className="flex-1 min-w-[280px] flex flex-col gap-4">
+              <div key={column.id} className="w-[85vw] md:flex-1 md:min-w-[280px] flex flex-col gap-4 snap-center">
                 <div className="flex items-center justify-between px-2">
                   <div className="flex items-center gap-2">
                     <span className={cn("w-2 h-2 rounded-full", column.color)}></span>

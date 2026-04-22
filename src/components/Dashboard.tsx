@@ -81,8 +81,8 @@ export default function Dashboard() {
       </div>
 
       {/* Alerts Section */}
-      <div className="max-w-2xl">
-        <div className="bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-white/40 shadow-sm flex flex-col">
+      <div className="w-full">
+        <div className="bg-white/60 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-white/40 shadow-sm flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h4 className="text-lg font-bold">Alertas Próximos</h4>
             <Calendar size={20} className="text-slate-400" />
