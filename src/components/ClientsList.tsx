@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { collection, query, onSnapshot, addDoc, Timestamp, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError } from '../lib/firebase';
-import { Client } from '../types';
+import { Client, Debt } from '../types';
 import { 
   Plus, 
   Search, 
@@ -12,9 +12,11 @@ import {
   FileText,
   X,
   Trash2,
-  Edit2
+  Edit2,
+  DollarSign,
+  AlertCircle
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ClientsListProps {
@@ -23,8 +25,11 @@ interface ClientsListProps {
 
 export default function ClientsList({ createTrigger }: ClientsListProps) {
   const [clients, setClients] = useState<Client[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [search, setSearch] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [currentClient, setCurrentClient] = useState<Partial<Client> | null>(null);
 
   useEffect(() => {
@@ -36,11 +41,25 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
 
   useEffect(() => {
     const q = query(collection(db, 'clients'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeClients = onSnapshot(q, (snapshot) => {
       setClients(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Client)));
     });
-    return unsubscribe;
+
+    const unsubscribeDebts = onSnapshot(query(collection(db, 'debts')), (snapshot) => {
+        setDebts(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Debt)));
+    });
+
+    return () => {
+        unsubscribeClients();
+        unsubscribeDebts();
+    };
   }, []);
+
+  const getClientTotalDebt = (clientId: string) => {
+    return debts
+      .filter(d => d.clientId === clientId && d.status !== 'PAID')
+      .reduce((acc, curr) => acc + curr.amount, 0);
+  };
 
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -75,17 +94,47 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
   };
 
   const deleteClient = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cliente? Todas as dívidas associadas serão órfãs no sistema.')) {
-      try {
-        await deleteDoc(doc(db, 'clients', id));
-      } catch (err) {
-        handleFirestoreError(err, 'delete', `clients/${id}`);
-      }
+    if (!id) {
+      console.error('deleteClient: No ID provided');
+      return;
+    }
+    console.log('deleteClient: Attempting to delete client', id);
+    try {
+      setError(null);
+      // Cascade delete: find all debts for this client
+      const clientDebts = debts.filter(d => d.clientId === id);
+      console.log(`deleteClient: Found ${clientDebts.length} associated debts to delete`);
+      
+      const deletePromises = clientDebts.map(d => {
+        console.log('deleteClient: Deleting debt', d.id);
+        return deleteDoc(doc(db, 'debts', d.id));
+      });
+      
+      await Promise.all(deletePromises);
+      console.log('deleteClient: All associated debts deleted successfully');
+      
+      await deleteDoc(doc(db, 'clients', id));
+      console.log('deleteClient: Client deleted successfully');
+      setShowDeleteConfirm(null);
+    } catch (err: any) {
+      console.error('deleteClient: Error occurred', err);
+      setError(err.message || 'Erro desconhecido ao excluir');
     }
   };
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="text-red-500" size={20} />
+            <p className="text-sm text-red-700 font-medium">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+            <X size={18} />
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-bold text-slate-900">Base de Clientes</h3>
@@ -120,6 +169,7 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
               <tr className="bg-slate-50 border-b border-slate-100">
                 <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Cliente</th>
                 <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Documento</th>
+                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Dívida Total</th>
                 <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Contato</th>
                 <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Ações</th>
               </tr>
@@ -140,6 +190,12 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-slate-600 font-mono text-xs">{client.document || '---'}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1">
+                        <DollarSign size={12} className="text-blue-500" />
+                        <p className="font-bold text-slate-900">{formatCurrency(getClientTotalDebt(client.id))}</p>
+                    </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="space-y-1">
@@ -164,7 +220,7 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
                         <Edit2 size={16} />
                       </button>
                       <button 
-                        onClick={() => deleteClient(client.id)}
+                        onClick={() => setShowDeleteConfirm(client.id)}
                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                       >
                         <Trash2 size={16} />
@@ -193,6 +249,49 @@ export default function ClientsList({ createTrigger }: ClientsListProps) {
           </table>
         </div>
       </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl overflow-hidden text-center"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 mb-2">Excluir Cliente?</h4>
+              <p className="text-slate-500 text-sm mb-6">
+                Tem certeza que deseja excluir este cliente e <strong>TODAS</strong> as suas dívidas vinculadas? Esta ação é irreversível.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all text-sm"
+                >
+                  CANCELAR
+                </button>
+                <button 
+                  onClick={() => deleteClient(showDeleteConfirm)}
+                  className="flex-1 py-3 px-4 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-200 text-sm"
+                >
+                  SIM, EXCLUIR
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Modal */}
       <AnimatePresence>

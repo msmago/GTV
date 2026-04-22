@@ -27,6 +27,7 @@ export default function DebtsList({ createTrigger }: DebtsListProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [currentDebt, setCurrentDebt] = useState<Partial<Debt> | null>(null);
 
   useEffect(() => {
@@ -89,12 +90,12 @@ export default function DebtsList({ createTrigger }: DebtsListProps) {
   };
 
   const deleteDebt = async (id: string) => {
-    if (confirm('Deseja excluir este registro de dívida?')) {
-      try {
-        await deleteDoc(doc(db, 'debts', id));
-      } catch (err) {
-        handleFirestoreError(err, 'delete', `debts/${id}`);
-      }
+    if (!id) return;
+    try {
+      await deleteDoc(doc(db, 'debts', id));
+      setShowDeleteConfirm(null);
+    } catch (err) {
+      handleFirestoreError(err, 'delete', `debts/${id}`);
     }
   };
 
@@ -202,7 +203,7 @@ export default function DebtsList({ createTrigger }: DebtsListProps) {
                             <Edit2 size={16} />
                         </button>
                         <button 
-                            onClick={() => deleteDebt(debt.id)}
+                            onClick={() => setShowDeleteConfirm(debt.id)}
                             className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                         >
                             <Trash2 size={16} />
@@ -225,6 +226,49 @@ export default function DebtsList({ createTrigger }: DebtsListProps) {
           </table>
         </div>
       </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl overflow-hidden text-center"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 mb-2">Excluir Registro?</h4>
+              <p className="text-slate-500 text-sm mb-6">
+                Deseja realmente excluir este registro de dívida? Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all text-sm"
+                >
+                  CANCELAR
+                </button>
+                <button 
+                  onClick={() => deleteDebt(showDeleteConfirm)}
+                  className="flex-1 py-3 px-4 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-200 text-sm"
+                >
+                  SIM, EXCLUIR
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Modal */}
       <AnimatePresence>

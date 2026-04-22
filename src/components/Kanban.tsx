@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Debt, DebtStatus, Client } from '../types';
-import { motion, Reorder } from 'motion/react';
+import { motion, Reorder, AnimatePresence } from 'motion/react';
 import { 
   MoreHorizontal, 
   Clock, 
@@ -10,7 +10,8 @@ import {
   Smartphone, 
   AlertCircle,
   HelpCircle,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -32,6 +33,8 @@ const COLUMNS: Column[] = [
 export default function Kanban() {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -54,15 +57,53 @@ export default function Kanban() {
   }, []);
 
   const moveDebt = async (debtId: string, newStatus: DebtStatus) => {
-    const debtRef = doc(db, 'debts', debtId);
-    await updateDoc(debtRef, { 
-      status: newStatus,
-      updatedAt: serverTimestamp()
-    });
+    if (!debtId) return;
+    console.log('moveDebt: Attempting to move debt', debtId, 'to', newStatus);
+    try {
+      setError(null);
+      const debtRef = doc(db, 'debts', debtId);
+      await updateDoc(debtRef, { 
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      });
+      console.log('moveDebt: Success');
+    } catch (err: any) {
+      console.error('moveDebt: Error', err);
+      setError(`Erro ao mover dívida: ${err.message}`);
+    }
+  };
+
+  const deleteDebt = async (debtId: string) => {
+    if (!debtId) {
+      console.error('deleteDebt: No ID provided');
+      return;
+    }
+    console.log('deleteDebt: Attempting to delete debt', debtId);
+    try {
+      setError(null);
+      await deleteDoc(doc(db, 'debts', debtId));
+      console.log('deleteDebt: Success');
+      setShowDeleteConfirm(null);
+    } catch (err: any) {
+      console.error('deleteDebt: Error', err);
+      setError(`Erro ao excluir dívida: ${err.message}`);
+    }
   };
 
   return (
     <div className="h-full flex flex-col gap-6">
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="text-red-500" size={20} />
+            <p className="text-sm text-red-700 font-medium">{error}</p>
+          </div>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+            <span className="sr-only">Fechar</span>
+            <HelpCircle size={14} className="rotate-45" /> 
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-bold text-slate-900">Pipeline de Recuperação</h3>
@@ -105,7 +146,13 @@ export default function Kanban() {
                 <div 
                   className="flex-1 bg-white/20 backdrop-blur-sm rounded-2xl p-3 border-2 border-dashed border-white/30 space-y-3"
                   onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => moveDebt('', column.id)} // In a real DND we store the dragged ID
+                  onDrop={() => {
+                    const id = (window as any).draggedDebtId;
+                    if (id) {
+                      moveDebt(id, column.id);
+                      (window as any).draggedDebtId = null;
+                    }
+                  }}
                 >
                   {columnDebts.map((debt) => (
                     <DebtCard 
@@ -113,6 +160,7 @@ export default function Kanban() {
                       debt={debt} 
                       client={clients[debt.clientId]} 
                       onMove={(status) => moveDebt(debt.id, status)}
+                      onDelete={() => setShowDeleteConfirm(debt.id)}
                     />
                   ))}
                   
@@ -128,6 +176,49 @@ export default function Kanban() {
           })}
         </div>
       </div>
+
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl overflow-hidden text-center"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={32} />
+              </div>
+              <h4 className="text-xl font-bold text-slate-900 mb-2">Excluir Registro?</h4>
+              <p className="text-slate-500 text-sm mb-6">
+                Deseja realmente excluir este registro de dívida? Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="flex-1 py-3 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all text-sm"
+                >
+                  CANCELAR
+                </button>
+                <button 
+                  onClick={() => deleteDebt(showDeleteConfirm)}
+                  className="flex-1 py-3 px-4 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-all shadow-lg shadow-red-200 text-sm"
+                >
+                  SIM, EXCLUIR
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -137,9 +228,10 @@ interface DebtCardProps {
   debt: Debt;
   client?: Client;
   onMove: (status: DebtStatus) => Promise<void>;
+  onDelete: () => Promise<void>;
 }
 
-function DebtCard({ debt, client, onMove }: DebtCardProps) {
+function DebtCard({ debt, client, onMove, onDelete }: DebtCardProps) {
   const [showOptions, setShowOptions] = useState(false);
 
   const handleWhatsAppClick = () => {
@@ -205,7 +297,12 @@ function DebtCard({ debt, client, onMove }: DebtCardProps) {
                 </button>
               ))}
               <div className="h-px bg-slate-100 my-1"></div>
-              <button className="w-full text-left px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded transition-colors font-medium">Excluir Registro</button>
+              <button 
+                onClick={() => { onDelete(); setShowOptions(false); }}
+                className="w-full text-left px-2 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded transition-colors font-medium"
+              >
+                Excluir Registro
+              </button>
             </div>
           )}
         </div>
