@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Helper for basic string validation
+    function isNonEmptyString(val, maxLen) {
+      return val is string && val.size() > 0 && val.size() <= maxLen;
+    }
+
+    // --- Clients ---
+    match /clients/{clientId} {
+      function isValidClient(data) {
+        return isNonEmptyString(data.name, 200) &&
+               isNonEmptyString(data.phone, 32) &&
+               (!('email' in data) || data.email is string) &&
+               (!('document' in data) || data.document is string) &&
+               (!('notes' in data) || data.notes is string);
+      }
+
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(clientId);
+      allow create: if isSignedIn() && 
+                    isValidClient(incoming()) && 
+                    incoming().createdAt == request.time &&
+                    incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && 
+                    isValidClient(incoming()) && 
+                    incoming().updatedAt == request.time &&
+                    incoming().createdAt == existing().createdAt;
+      allow delete: if isSignedIn(); // In a real app we might restrict this to admins
+    }
+
+    // --- Debts ---
+    match /debts/{debtId} {
+      function isValidDebt(data) {
+        return data.clientId is string &&
+               data.amount is number && data.amount >= 0 &&
+               data.dueDate is timestamp &&
+               data.status in ['PENDING', 'OVERDUE', 'COLLECTING', 'NEGOTIATING', 'PAID'];
+      }
+
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(debtId);
+      allow create: if isSignedIn() && 
+                    isValidDebt(incoming()) &&
+                    exists(/databases/$(database)/documents/clients/$(incoming().clientId)) &&
+                    incoming().createdAt == request.time &&
+                    incoming().updatedAt == request.time;
+      allow update: if isSignedIn() && 
+                    isValidDebt(incoming()) &&
+                    incoming().updatedAt == request.time &&
+                    incoming().createdAt == existing().createdAt &&
+                    incoming().clientId == existing().clientId;
+      allow delete: if isSignedIn();
+    }
+
+    // --- Interactions ---
+    match /interactions/{interactionId} {
+      function isValidInteraction(data) {
+        return data.clientId is string &&
+               data.type in ['MESSAGE_SENT', 'REPLY_RECEIVED', 'NOTE', 'AUTOMATION'] &&
+               isNonEmptyString(data.content, 5000);
+      }
+
+      allow list: if isSignedIn() && (resource.data.clientId == request.query.clientId || true); // List filtered by client is common
+      allow get: if isSignedIn() && isValidId(interactionId);
+      allow create: if isSignedIn() && 
+                    isValidInteraction(incoming()) &&
+                    exists(/databases/$(database)/documents/clients/$(incoming().clientId)) &&
+                    incoming().timestamp == request.time;
+      allow delete: if isSignedIn();
+    }
+  }
+}

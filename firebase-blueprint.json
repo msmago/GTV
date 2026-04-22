@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "client": {
+      "title": "Client",
+      "description": "A customer who may have debts",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "document": { "type": "string", "description": "CPF or CNPJ" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone"]
+    },
+    "debt": {
+      "title": "Debt",
+      "description": "A debt record associated with a client",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "OVERDUE", "COLLECTING", "NEGOTIATING", "PAID"]
+        },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "amount", "dueDate", "status"]
+    },
+    "interaction": {
+      "title": "Interaction",
+      "description": "Log of messages, calls or notes related to a client",
+      "type": "object",
+      "properties": {
+        "clientId": { "type": "string" },
+        "type": { "type": "string", "enum": ["MESSAGE_SENT", "REPLY_RECEIVED", "NOTE", "AUTOMATION"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "operatorId": { "type": "string" }
+      },
+      "required": ["clientId", "type", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": "client",
+      "description": "Customer records"
+    },
+    "/debts/{debtId}": {
+      "schema": "debt",
+      "description": "Debt records"
+    },
+    "/interactions/{interactionId}": {
+      "schema": "interaction",
+      "description": "Communication history"
+    }
+  }
+}

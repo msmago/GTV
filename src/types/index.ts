@@ -1,0 +1,32 @@
+export type DebtStatus = 'PENDING' | 'OVERDUE' | 'COLLECTING' | 'NEGOTIATING' | 'PAID';
+
+export interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  phone: string;
+  document?: string;
+  notes?: string;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface Debt {
+  id: string;
+  clientId: string;
+  amount: number;
+  dueDate: any;
+  status: DebtStatus;
+  description?: string;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface Interaction {
+  id: string;
+  clientId: string;
+  type: 'MESSAGE_SENT' | 'REPLY_RECEIVED' | 'NOTE' | 'AUTOMATION';
+  content: string;
+  timestamp: any;
+  operatorId?: string;
+}
