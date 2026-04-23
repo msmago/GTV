@@ -16,9 +16,12 @@ import {
   MessageSquare,
   Filter,
   Menu,
+  BarChart3,
   X as CloseIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { collection, query, onSnapshot, where } from 'firebase/firestore';
+import { db } from './lib/firebase';
 import { useAuth } from './context/AuthContext';
 import { cn, formatCurrency } from './lib/utils';
 
@@ -27,15 +30,28 @@ import Dashboard from './components/Dashboard';
 import Kanban from './components/Kanban';
 import ClientsList from './components/ClientsList';
 import DebtsList from './components/DebtsList';
+import NotificationCenter from './components/NotificationCenter';
+import SettingsView from './components/Settings';
+import MonthlyReports from './components/MonthlyReports';
 
-type View = 'dashboard' | 'kanban' | 'clients' | 'debts';
+type View = 'dashboard' | 'kanban' | 'clients' | 'debts' | 'settings' | 'reports';
 
 export default function App() {
   const { user, loading, loginWithGoogle, loginWithEmail, registerWithEmail, logout } = useAuth();
   const [activeView, setActiveView] = React.useState<View>('dashboard');
   const [showCreateDropdown, setShowCreateDropdown] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState('');
   const [createTrigger, setCreateTrigger] = React.useState<{ type: 'client' | 'debt', timestamp: number } | null>(null);
+  const [overdueCount, setOverdueCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!user) return;
+    const unsub = onSnapshot(query(collection(db, 'debts'), where('status', '==', 'OVERDUE')), (snap) => {
+      setOverdueCount(snap.size);
+    });
+    return () => unsub();
+  }, [user]);
 
   // Auth States
   const [authMode, setAuthMode] = React.useState<'login' | 'signup'>('login');
@@ -90,7 +106,7 @@ export default function App() {
               <div className="w-10 h-10 bg-white text-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <CreditCard size={24} />
               </div>
-              <span className="text-xl font-bold tracking-tight">CobrançaPro</span>
+              <span className="text-xl font-bold tracking-tight">G. Inadimplentes</span>
             </div>
             
             <motion.h1 
@@ -233,6 +249,8 @@ export default function App() {
     { id: 'kanban', label: 'Funil de Cobrança', icon: Trello },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'debts', label: 'Dívidas', icon: CreditCard },
+    { id: 'reports', label: 'Relatórios Mensais', icon: BarChart3 },
+    { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
   return (
@@ -243,15 +261,40 @@ export default function App() {
           <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
             <CreditCard size={18} />
           </div>
-          <span>CobrançaPro</span>
+          <span>G. Inadimplentes</span>
         </div>
-        <button 
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
-        >
-          {isMobileMenuOpen ? <CloseIcon size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+          >
+            {isMobileMenuOpen ? <CloseIcon size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-white border-b border-slate-200 px-4 pb-4 overflow-hidden"
+          >
+             <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input 
+                type="text" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar clientes ou dívidas..."
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Sidebar Overlay (Mobile) */}
       <AnimatePresence>
@@ -276,7 +319,7 @@ export default function App() {
             <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
               <CreditCard size={18} />
             </div>
-            <span>CobrançaPro</span>
+            <span>G. Inadimplentes</span>
           </div>
         </div>
 
@@ -325,24 +368,34 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:gap-4">
+        {overdueCount > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            className="bg-red-600 text-white px-6 py-2 flex items-center justify-between md:rounded-2xl"
+          >
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+              <AlertCircle size={14} />
+              Atenção: Você possui {overdueCount} {overdueCount === 1 ? 'dívida vencida' : 'dívidas vencidas'} aguardando ação.
+            </div>
+            <button 
+              onClick={() => setActiveView('debts')}
+              className="text-[10px] font-black underline underline-offset-4 hover:text-red-100"
+            >
+              RESOLVER AGORA
+            </button>
+          </motion.div>
+        )}
         {/* Header (Desktop Only) */}
         <header className="hidden md:flex h-16 glass rounded-2xl items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4 flex-1">
             <h2 className="text-lg font-bold text-blue-900 capitalize shrink-0">
               {menuItems.find(m => m.id === activeView)?.label || activeView}
             </h2>
-            <div className="max-w-md w-full relative ml-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Buscar clientes, dívidas..."
-                className="w-full pl-10 pr-4 py-2 bg-white/50 border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
-              />
-            </div>
           </div>
           
           <div className="flex items-center gap-4 shrink-0 relative">
-            {/* Elementos removidos a pedido do usuário */}
+            {/* NotificationCenter removed */}
           </div>
         </header>
 
@@ -363,9 +416,11 @@ export default function App() {
                 </h2>
               </div>
               {activeView === 'dashboard' && <Dashboard />}
-              {activeView === 'kanban' && <Kanban />}
-              {activeView === 'clients' && <ClientsList createTrigger={createTrigger?.type === 'client' ? createTrigger.timestamp : undefined} />}
-              {activeView === 'debts' && <DebtsList createTrigger={createTrigger?.type === 'debt' ? createTrigger.timestamp : undefined} />}
+              {activeView === 'kanban' && <Kanban searchTerm={searchTerm} />}
+              {activeView === 'clients' && <ClientsList searchTerm={searchTerm} createTrigger={createTrigger?.type === 'client' ? createTrigger.timestamp : undefined} />}
+              {activeView === 'debts' && <DebtsList searchTerm={searchTerm} createTrigger={createTrigger?.type === 'debt' ? createTrigger.timestamp : undefined} />}
+              {activeView === 'reports' && <MonthlyReports />}
+              {activeView === 'settings' && <SettingsView />}
             </motion.div>
           </AnimatePresence>
         </div>

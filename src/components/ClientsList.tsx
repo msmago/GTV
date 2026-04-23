@@ -21,12 +21,17 @@ import { motion, AnimatePresence } from 'motion/react';
 
 interface ClientsListProps {
   createTrigger?: number;
+  searchTerm?: string;
 }
 
-export default function ClientsList({ createTrigger }: ClientsListProps) {
+export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsListProps) {
   const [clients, setClients] = useState<Client[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchTerm);
+
+  useEffect(() => {
+    setSearch(searchTerm);
+  }, [searchTerm]);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);

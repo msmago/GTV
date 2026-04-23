@@ -60,7 +60,7 @@ service cloud.firestore {
         return data.clientId is string &&
                data.amount is number && data.amount >= 0 &&
                data.dueDate is timestamp &&
-               data.status in ['PENDING', 'OVERDUE', 'COLLECTING', 'NEGOTIATING', 'PAID'];
+               data.status in ['PENDING', 'OVERDUE', 'COLLECTING', 'PAID'];
       }
 
       allow list: if isSignedIn();
@@ -93,6 +93,19 @@ service cloud.firestore {
                     exists(/databases/$(database)/documents/clients/$(incoming().clientId)) &&
                     incoming().timestamp == request.time;
       allow delete: if isSignedIn();
+    }
+
+    // --- Settings ---
+    match /settings/{settingId} {
+      function isValidSystemSettings(data) {
+        return isNonEmptyString(data.pixKey, 100) &&
+               data.pixKeyType in ['CPF_CNPJ', 'EMAIL', 'PHONE', 'RANDOM'] &&
+               isNonEmptyString(data.receiverName, 100) &&
+               isNonEmptyString(data.city, 100);
+      }
+
+      allow get: if isSignedIn() && isValidId(settingId);
+      allow write: if isSignedIn() && isValidSystemSettings(incoming()) && (request.method == 'create' || incoming().updatedAt == request.time);
     }
   }
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { collection, query, onSnapshot, doc, updateDoc, Timestamp, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, Timestamp, serverTimestamp, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Debt, DebtStatus, Client } from '../types';
+import { Debt, DebtStatus, Client, SystemSettings } from '../types';
 import { motion, Reorder, AnimatePresence } from 'motion/react';
 import { 
   MoreHorizontal, 
@@ -22,15 +22,18 @@ interface Column {
   color: string;
 }
 
+interface KanbanProps {
+  searchTerm?: string;
+}
+
 const COLUMNS: Column[] = [
   { id: 'PENDING', title: 'A Vencer', color: 'bg-slate-500' },
   { id: 'OVERDUE', title: 'Vencido', color: 'bg-red-500' },
   { id: 'COLLECTING', title: 'Em Cobrança', color: 'bg-amber-500' },
-  { id: 'NEGOTIATING', title: 'Negotiando', color: 'bg-blue-500' },
   { id: 'PAID', title: 'Pago', color: 'bg-emerald-500' },
 ];
 
-export default function Kanban() {
+export default function Kanban({ searchTerm = '' }: KanbanProps) {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +130,13 @@ export default function Kanban() {
       <div className="flex-1 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
         <div className="flex gap-4 md:gap-6 h-full min-w-max md:min-w-[1200px]">
           {COLUMNS.map((column) => {
-            const columnDebts = debts.filter(d => d.status === column.id);
+            const columnDebts = debts.filter(d => {
+              const statusMatch = d.status === column.id;
+              const nameMatch = clients[d.clientId]?.name.toLowerCase().includes(searchTerm.toLowerCase());
+              const docMatch = clients[d.clientId]?.document?.toLowerCase().includes(searchTerm.toLowerCase());
+              const descMatch = d.description?.toLowerCase().includes(searchTerm.toLowerCase());
+              return statusMatch && (searchTerm === '' || nameMatch || docMatch || descMatch);
+            });
             return (
               <div key={column.id} className="w-[85vw] md:flex-1 md:min-w-[280px] flex flex-col gap-4 snap-center">
                 <div className="flex items-center justify-between px-2">
@@ -234,9 +243,26 @@ interface DebtCardProps {
 function DebtCard({ debt, client, onMove, onDelete }: DebtCardProps) {
   const [showOptions, setShowOptions] = useState(false);
 
-  const handleWhatsAppClick = () => {
+  const handleWhatsAppClick = async () => {
     if (!client) return;
-    const message = `Olá ${client.name}, este é um lembrete da sua fatura no valor de ${formatCurrency(debt.amount)} que está em atraso. Por favor, regularize sua situação para evitar juros.`;
+    
+    let settings: SystemSettings | null = null;
+    try {
+      const docRef = doc(db, 'settings', 'pix_config');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        settings = docSnap.data() as SystemSettings;
+      }
+    } catch (err) {
+      console.error("Error fetching PIX settings for message:", err);
+    }
+
+    let message = `Olá ${client.name}, este é um lembrete da sua fatura no valor de ${formatCurrency(debt.amount)} que está em atraso. Por favor, regularize sua situação para evitar juros.`;
+    
+    if (settings?.pixKey) {
+      message += `\n\nVocê pode pagar via PIX:\nChave: ${settings.pixKey}\nTipo: ${settings.pixKeyType}\nNome: ${settings.receiverName}`;
+    }
+
     const encodedMessage = encodeURIComponent(message);
     const formattedPhone = client.phone.replace(/\D/g, '');
     const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`;

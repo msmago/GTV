@@ -25,7 +25,7 @@
         "dueDate": { "type": "string", "format": "date-time" },
         "status": {
           "type": "string",
-          "enum": ["PENDING", "OVERDUE", "COLLECTING", "NEGOTIATING", "PAID"]
+          "enum": ["PENDING", "OVERDUE", "COLLECTING", "PAID"]
         },
         "description": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
@@ -45,6 +45,19 @@
         "operatorId": { "type": "string" }
       },
       "required": ["clientId", "type", "content", "timestamp"]
+    },
+    "systemSettings": {
+      "title": "System Settings",
+      "description": "System-wide configurations like PIX data",
+      "type": "object",
+      "properties": {
+        "pixKey": { "type": "string" },
+        "pixKeyType": { "type": "string", "enum": ["CPF_CNPJ", "EMAIL", "PHONE", "RANDOM"] },
+        "receiverName": { "type": "string" },
+        "city": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["pixKey", "pixKeyType", "receiverName", "city"]
     }
   },
   "firestore": {
@@ -59,6 +72,10 @@
     "/interactions/{interactionId}": {
       "schema": "interaction",
       "description": "Communication history"
+    },
+    "/settings/{settingId}": {
+      "schema": "systemSettings",
+      "description": "System-wide configurations"
     }
   }
 }

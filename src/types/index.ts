@@ -1,4 +1,4 @@
-export type DebtStatus = 'PENDING' | 'OVERDUE' | 'COLLECTING' | 'NEGOTIATING' | 'PAID';
+export type DebtStatus = 'PENDING' | 'OVERDUE' | 'COLLECTING' | 'PAID';
 
 export interface Client {
   id: string;
@@ -29,4 +29,12 @@ export interface Interaction {
   content: string;
   timestamp: any;
   operatorId?: string;
+}
+
+export interface SystemSettings {
+  pixKey: string;
+  pixKeyType: 'CPF_CNPJ' | 'EMAIL' | 'PHONE' | 'RANDOM';
+  receiverName: string;
+  city: string;
+  updatedAt: any;
 }
