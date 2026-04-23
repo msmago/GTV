@@ -120,7 +120,7 @@ export default function App() {
             </motion.h1>
             
             <p className="text-blue-100 max-w-md text-lg leading-relaxed opacity-80">
-              Pipeline inteligente, automações reais e controle total da sua inadimplência em um só lugar.
+              Pipeline inteligente e controle total da sua inadimplência em um só lugar.
             </p>
           </div>
 
