@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import WhatsAppModal from './WhatsAppModal';
 
 interface DebtsListProps {
   createTrigger?: number;
@@ -37,6 +38,7 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [currentDebt, setCurrentDebt] = useState<Partial<Debt> | null>(null);
+  const [whatsappData, setWhatsappData] = useState<{ isOpen: boolean; clientName: string; phone: string; amount: number } | null>(null);
 
   useEffect(() => {
     if (createTrigger) {
@@ -138,16 +140,12 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
 
-    let message = `Olá ${client.name}, este é um lembrete da sua fatura no valor de ${formatCurrency(amount)} que está em atraso. Por favor, regularize sua situação para evitar juros.`;
-    
-    if (settings?.pixKey) {
-      message += `\n\nVocê pode pagar via PIX:\nChave: ${settings.pixKey}\nTipo: ${settings.pixKeyType}\nNome: ${settings.receiverName}`;
-    }
-
-    const encodedMessage = encodeURIComponent(message);
-    const formattedPhone = client.phone.replace(/\D/g, '');
-    const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`;
-    window.open(url, '_blank');
+    setWhatsappData({
+      isOpen: true,
+      clientName: client.name,
+      phone: client.phone,
+      amount
+    });
   };
 
   const statusMap: Record<DebtStatus, { label: string, color: string }> = {
@@ -159,50 +157,50 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-slate-900">Carteira de Dívidas</h3>
-          <p className="text-slate-500 text-sm">Controle total dos valores em aberto e recebidos.</p>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Carteira de Dívidas</h3>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Lançamentos e Controle Financeiro</p>
         </div>
         <button 
           onClick={() => { setCurrentDebt({ status: 'PENDING' }); setShowModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-all font-bold"
+          className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95"
         >
           <Plus size={18} />
-          Lançar Dívida
+          LANÇAR DÍVIDA
         </button>
       </div>
 
-      <div className="md:glass md:rounded-2xl md:border-none md:shadow-none overflow-hidden">
-        <div className="p-4 border-b border-white/20 bg-white/10 backdrop-blur-md flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-stretch md:items-center">
+      <div className="space-y-4">
+        <div className="glass p-2 rounded-[2rem] flex flex-col md:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Buscar por cliente ou status..."
+              placeholder="Pesquise por cliente, descrição ou status..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 md:py-2 bg-white md:bg-white/50 border border-slate-200 md:border-none rounded-xl text-sm md:text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+              className="w-full pl-12 pr-4 py-4 bg-white/50 border border-transparent rounded-[1.5rem] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold placeholder:text-slate-400 placeholder:font-medium"
             />
           </div>
           <div className="relative w-full md:w-auto">
             <button 
               onClick={() => setShowFilterDropdown(!showFilterDropdown)}
               className={cn(
-                "flex items-center justify-center md:justify-start gap-2 px-4 py-3 md:py-2 text-xs font-bold rounded-xl md:rounded-lg transition-all border md:border-none w-full md:w-auto",
+                "flex items-center justify-center gap-3 px-6 py-4 text-xs font-black rounded-[1.5rem] transition-all border w-full",
                 selectedClientId 
-                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100" 
-                  : "text-slate-500 bg-white md:bg-transparent hover:bg-white/80 border-slate-200 md:border-none"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-200" 
+                  : "text-slate-600 bg-white border-slate-100 hover:bg-slate-50 uppercase tracking-widest"
               )}
             >
-              <Filter size={14} />
-              <span className="truncate max-w-[150px] md:max-w-none">
-                {selectedClientId ? getClientName(selectedClientId) : "Filtrar por Devedor"}
+              <Filter size={16} />
+              <span className="truncate max-w-[200px]">
+                {selectedClientId ? getClientName(selectedClientId) : "Todos os Clientes"}
               </span>
               {selectedClientId && (
                 <div 
                   onClick={(e) => { e.stopPropagation(); setSelectedClientId(''); }}
-                  className="ml-1 p-0.5 hover:bg-white/20 rounded-full"
+                  className="ml-1 p-1 hover:bg-white/20 rounded-full"
                 >
                   <X size={12} />
                 </div>
@@ -212,41 +210,34 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
             <AnimatePresence>
               {showFilterDropdown && (
                 <>
-                  <div 
-                    className="fixed inset-0 z-40 md:hidden" 
-                    onClick={() => setShowFilterDropdown(false)} 
-                  />
-                  <div 
-                    className="hidden md:block fixed inset-0 z-40" 
-                    onClick={() => setShowFilterDropdown(false)} 
-                  />
+                  <div className="fixed inset-0 z-40" onClick={() => setShowFilterDropdown(false)} />
                   <motion.div 
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 left-0 md:left-auto mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden"
+                    className="absolute right-0 left-0 md:left-auto top-full mt-3 bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-2xl border border-white z-50 overflow-hidden w-full md:w-72"
                   >
-                    <div className="p-4 border-b border-slate-50 bg-slate-50/50">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Selecione o Devedor</p>
+                    <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Devedores Cadastrados</p>
                     </div>
-                    <div className="max-h-60 overflow-y-auto p-2 scrollbar-thin">
+                    <div className="max-h-60 overflow-y-auto p-2 scrollbar-none">
                       <button
                         onClick={() => { setSelectedClientId(''); setShowFilterDropdown(false); }}
                         className={cn(
-                          "w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all mb-1",
-                          selectedClientId === '' ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50"
+                          "w-full text-left px-5 py-3 rounded-2xl text-xs font-bold transition-all mb-1",
+                          selectedClientId === '' ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "text-slate-600 hover:bg-white"
                         )}
                       >
-                        Todos os Devedores
+                        Visualizar Todos
                       </button>
-                      <div className="h-px bg-slate-50 my-1 mx-2" />
+                      <div className="h-px bg-slate-100 my-2 mx-4" />
                       {clients.sort((a,b) => a.name.localeCompare(b.name)).map(client => (
                         <button
                           key={client.id}
                           onClick={() => { setSelectedClientId(client.id); setShowFilterDropdown(false); }}
                           className={cn(
-                            "w-full text-left px-3 py-2 rounded-xl text-xs font-medium transition-all mb-1",
-                            selectedClientId === client.id ? "bg-blue-50 text-blue-600" : "text-slate-600 hover:bg-slate-50"
+                            "w-full text-left px-5 py-3 rounded-2xl text-xs font-bold transition-all mb-1",
+                            selectedClientId === client.id ? "bg-blue-600 text-white shadow-lg shadow-blue-200" : "text-slate-600 hover:bg-white"
                           )}
                         >
                           {client.name}
@@ -261,46 +252,49 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block glass rounded-[2.5rem] overflow-hidden border-none shadow-2xl shadow-blue-900/5">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Cliente / Descrição</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Valor</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Vencimento</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Status</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Ações</th>
+              <tr className="border-b border-slate-100">
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Devedor & Detalhes</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Valor Bruto</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Data Limite</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Situação</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-50">
               {filteredDebts.map((debt) => (
-                <tr key={debt.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="font-semibold text-slate-900">{getClientName(debt.clientId)}</p>
-                    <p className="text-[10px] text-slate-500 line-clamp-1">{debt.description || 'Sem descrição'}</p>
+                <tr key={debt.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <td className="px-8 py-6">
+                    <p className="font-black text-slate-900 text-base tracking-tight">{getClientName(debt.clientId)}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 truncate max-w-[200px]">{debt.description || 'SEM OBSERVAÇÃO'}</p>
+                    </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-slate-900">{formatCurrency(debt.amount)}</p>
+                  <td className="px-8 py-6">
+                    <p className="font-black text-blue-600 text-lg leading-none">{formatCurrency(debt.amount)}</p>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-xs text-slate-600">
-                      <Calendar size={12} className="text-slate-400" />
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                      <Calendar size={14} className="text-slate-300" />
                       {debt.dueDate ? formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate) : '---'}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={cn("px-2 py-1 rounded-full text-[10px] font-bold uppercase", statusMap[debt.status].color)}>
+                  <td className="px-8 py-6">
+                    <span className={cn("px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.15em] shadow-sm", statusMap[debt.status].color)}>
                       {statusMap[debt.status].label}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                             onClick={() => handleWhatsAppClick(debt.clientId, debt.amount)}
-                            className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                            className="p-3 text-slate-400 hover:text-green-600 hover:bg-white rounded-2xl transition-all shadow-sm hover:shadow-md"
                             title="Cobrar via WhatsApp"
                         >
-                            <Smartphone size={16} />
+                            <Smartphone size={18} />
                         </button>
                         <button 
                             onClick={() => { 
@@ -308,15 +302,15 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
                                 setCurrentDebt({ ...debt, dueDate: date.toISOString().split('T')[0] }); 
                                 setShowModal(true); 
                             }}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            className="p-3 text-slate-400 hover:text-blue-600 hover:bg-white rounded-2xl transition-all shadow-sm hover:shadow-md"
                         >
-                            <Edit2 size={16} />
+                            <Edit2 size={18} />
                         </button>
                         <button 
                             onClick={() => setShowDeleteConfirm(debt.id)}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            className="p-3 text-slate-400 hover:text-red-500 hover:bg-white rounded-2xl transition-all shadow-sm hover:shadow-md"
                         >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                         </button>
                     </div>
                   </td>
@@ -327,28 +321,28 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden divide-y divide-slate-100 bg-white">
+        <div className="md:hidden space-y-4">
           {filteredDebts.map((debt) => (
-            <div key={debt.id} className="p-5 flex flex-col gap-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-bold text-slate-900 text-base">{getClientName(debt.clientId)}</p>
-                  <p className="text-xs text-slate-500 line-clamp-1">{debt.description || 'Sem descrição'}</p>
+            <div key={debt.id} className="glass p-6 rounded-[2.5rem] border-none shadow-xl shadow-blue-900/5">
+              <div className="flex items-start justify-between mb-6">
+                <div className="min-w-0">
+                  <p className="font-black text-slate-900 text-lg tracking-tight truncate mb-1">{getClientName(debt.clientId)}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">{debt.description || 'Sem descrição'}</p>
                 </div>
-                <span className={cn("px-2 py-1 rounded-full text-[9px] font-bold uppercase shrink-0", statusMap[debt.status].color)}>
+                <span className={cn("px-4 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-sm shrink-0", statusMap[debt.status].color)}>
                   {statusMap[debt.status].label}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between py-4 px-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between p-5 bg-white/50 rounded-3xl border border-white mb-6">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor</label>
-                  <p className="text-lg font-black text-blue-600">{formatCurrency(debt.amount)}</p>
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Valor Total</label>
+                  <p className="text-xl font-black text-blue-600 leading-none">{formatCurrency(debt.amount)}</p>
                 </div>
                 <div className="text-right">
-                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Vencimento</label>
-                   <div className="flex items-center gap-1.5 justify-end text-sm font-semibold text-slate-700">
-                      <Calendar size={14} className="text-slate-400" />
+                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Vencimento</label>
+                   <div className="flex items-center gap-1.5 justify-end text-sm font-black text-slate-900 leading-none">
+                      <Calendar size={14} className="text-slate-300" />
                       {debt.dueDate ? formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate) : '---'}
                    </div>
                 </div>
@@ -357,10 +351,10 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
               <div className="flex gap-2">
                   <button 
                     onClick={() => handleWhatsAppClick(debt.clientId, debt.amount)}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-50 text-green-600 rounded-xl text-xs font-bold border border-green-100"
+                    className="flex-1 flex items-center justify-center gap-3 py-4 bg-green-500 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-green-200"
                   >
                     <Smartphone size={16} />
-                    COBRAR
+                    Cobrar
                   </button>
                   <button 
                     onClick={() => { 
@@ -368,16 +362,15 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
                       setCurrentDebt({ ...debt, dueDate: date.toISOString().split('T')[0] }); 
                       setShowModal(true); 
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold border border-blue-100"
+                    className="aspect-square flex items-center justify-center w-14 bg-slate-100 text-slate-500 rounded-2xl"
                   >
-                    <Edit2 size={16} />
-                    EDITAR
+                    <Edit2 size={18} />
                   </button>
                   <button 
                     onClick={() => setShowDeleteConfirm(debt.id)}
-                    className="p-3 bg-red-50 text-red-500 rounded-xl border border-red-100"
+                    className="aspect-square flex items-center justify-center w-14 bg-red-50 text-red-500 rounded-2xl border border-red-100"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
               </div>
             </div>
@@ -552,6 +545,15 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
           </div>
         )}
       </AnimatePresence>
+
+      <WhatsAppModal 
+        isOpen={!!whatsappData?.isOpen}
+        onClose={() => setWhatsappData(null)}
+        clientName={whatsappData?.clientName || ''}
+        phone={whatsappData?.phone || ''}
+        amount={whatsappData?.amount || 0}
+        settings={settings}
+      />
     </div>
   );
 }

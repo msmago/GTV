@@ -14,7 +14,8 @@ import {
   Trash2,
   Edit2,
   DollarSign,
-  AlertCircle
+  AlertCircle,
+  MapPin
 } from 'lucide-react';
 import { cn, formatCurrency } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -69,6 +70,7 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
   const filteredClients = clients.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase()) ||
+    c.city?.toLowerCase().includes(search.toLowerCase()) ||
     c.phone.includes(search) ||
     c.document?.includes(search)
   ).sort((a, b) => b.createdAt?.seconds - a.createdAt?.seconds);
@@ -140,96 +142,96 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
           </button>
         </div>
       )}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-slate-900">Base de Clientes</h3>
-          <p className="text-slate-500 text-sm">Gerencie os dados cadastrais da sua carteira.</p>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Clientes</h3>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Gestão de Carteira e Contatos</p>
         </div>
         <button 
           onClick={() => { setCurrentClient({}); setShowModal(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-all"
+          className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95"
         >
           <UserPlus size={18} />
-          Novo Cliente
+          NOVO CLIENTE
         </button>
       </div>
 
-      <div className="md:glass md:rounded-2xl md:border-none md:shadow-none overflow-hidden">
-        <div className="p-4 border-b border-white/20 bg-white/10 backdrop-blur-md">
-          <div className="max-w-md relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+      <div className="space-y-4">
+        <div className="glass p-2 rounded-[2rem] flex flex-col md:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
-              placeholder="Nome, documento ou contato"
+              placeholder="Pesquise por nome, doc ou cidade..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 md:py-2 bg-white border md:bg-white/50 border-slate-200 md:border-none rounded-xl text-sm md:text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
+              className="w-full pl-12 pr-4 py-4 bg-white/50 border border-transparent rounded-[1.5rem] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold placeholder:text-slate-400 placeholder:font-medium"
             />
           </div>
         </div>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block glass rounded-[2.5rem] overflow-hidden border-none shadow-2xl shadow-blue-900/5">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Cliente</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Documento</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Dívida Total</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Contato</th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-[10px]">Ações</th>
+              <tr className="border-b border-slate-100">
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Identificação</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Documento</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Finanças</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Localização</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-50">
               {filteredClients.map((client) => (
-                <tr key={client.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                <tr key={client.id} className="hover:bg-blue-50/30 transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-lg shadow-slate-200">
                         {client.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">{client.name}</p>
-                        <p className="text-xs text-slate-500">ID: {client.id.substring(0, 8)}</p>
+                        <p className="font-black text-slate-900 text-base tracking-tight">{client.name}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">#{client.id.substring(0, 6)}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-slate-600 font-mono text-xs">{client.document || '---'}</p>
+                  <td className="px-8 py-6">
+                    <p className="text-slate-600 font-bold font-mono text-xs bg-slate-100 px-3 py-1 rounded-lg w-fit">{client.document || '---'}</p>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                        <DollarSign size={12} className="text-blue-500" />
-                        <p className="font-bold text-slate-900">{formatCurrency(getClientTotalDebt(client.id))}</p>
+                  <td className="px-8 py-6">
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase mb-1">Dívida Total</span>
+                        <p className="font-black text-blue-600 text-lg leading-none">{formatCurrency(getClientTotalDebt(client.id))}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-slate-600">
-                        <Phone size={12} className="text-slate-400" />
+                  <td className="px-8 py-6">
+                    <div className="flex flex-col gap-1.5 text-xs font-bold text-slate-500">
+                      <div className="flex items-center gap-2">
+                        <Phone size={14} className="text-blue-500" />
                         {client.phone}
                       </div>
-                      {client.email && (
-                        <div className="flex items-center gap-2 text-xs text-slate-600">
-                          <Mail size={12} className="text-slate-400" />
-                          {client.email}
+                      {client.city && (
+                        <div className="flex items-center gap-2 italic text-slate-400">
+                           <MapPin size={14} className="text-slate-300" />
+                           {client.city}
                         </div>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => { setCurrentClient(client); setShowModal(true); }}
-                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        className="p-3 text-slate-400 hover:text-blue-600 hover:bg-white rounded-2xl transition-all shadow-sm hover:shadow-md"
                       >
-                        <Edit2 size={16} />
+                        <Edit2 size={18} />
                       </button>
                       <button 
                         onClick={() => setShowDeleteConfirm(client.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-3 text-slate-400 hover:text-red-500 hover:bg-white rounded-2xl transition-all shadow-sm hover:shadow-md"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
@@ -240,60 +242,68 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden divide-y divide-slate-100 bg-white">
+        <div className="md:hidden space-y-4">
           {filteredClients.map((client) => (
-            <div key={client.id} className="p-5 flex flex-col gap-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shadow-sm border border-blue-100">
+            <div key={client.id} className="glass p-6 rounded-[2.5rem] border-none shadow-xl shadow-blue-900/5">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-[1.25rem] bg-slate-900 text-white flex items-center justify-center font-black text-xl shadow-xl shadow-slate-200">
                     {client.name.substring(0, 2).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-bold text-slate-900 text-base">{client.name}</p>
-                    <p className="text-[10px] text-slate-400 font-mono">ID: {client.id.substring(0, 8)}</p>
+                  <div className="min-w-0">
+                    <p className="font-black text-slate-900 text-lg tracking-tight truncate">{client.name}</p>
+                    {client.city && (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-blue-500 mt-0.5 italic">
+                           <MapPin size={12} />
+                           {client.city}
+                        </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-1">
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-white p-4 rounded-2xl border border-slate-50">
+                  <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Débito Ativo</label>
+                  <p className="font-black text-blue-600 text-lg leading-none">{formatCurrency(getClientTotalDebt(client.id))}</p>
+                </div>
+                <div className="bg-white p-4 rounded-2xl border border-slate-50">
+                   <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Documento</label>
+                   <p className="text-xs font-black text-slate-900 truncate">{client.document || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 mb-6">
+                <div className="flex items-center gap-4 p-4 bg-white/50 rounded-2xl border border-white">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+                    <Phone size={16} />
+                  </div>
+                  <span className="text-sm font-black text-slate-700">{client.phone}</span>
+                </div>
+                {client.email && (
+                  <div className="flex items-center gap-4 p-4 bg-white/50 rounded-2xl border border-white">
+                    <div className="w-8 h-8 rounded-xl bg-slate-50 text-slate-400 flex items-center justify-center shadow-sm">
+                        <Mail size={16} />
+                    </div>
+                    <span className="text-sm font-bold text-slate-500 truncate">{client.email}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
                   <button 
                     onClick={() => { setCurrentClient(client); setShowModal(true); }}
-                    className="p-3 text-blue-600 bg-blue-50 rounded-xl"
+                    className="flex-1 flex items-center justify-center gap-3 py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200"
                   >
-                    <Edit2 size={18} />
+                    <Edit2 size={16} />
+                    Editar
                   </button>
                   <button 
                     onClick={() => setShowDeleteConfirm(client.id)}
-                    className="p-3 text-red-500 bg-red-50 rounded-xl"
+                    className="aspect-square flex items-center justify-center w-14 bg-red-50 text-red-500 rounded-2xl border border-red-100"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={20} />
                   </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 py-4 px-4 bg-slate-50 rounded-2xl border border-slate-100">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Dívida Total</label>
-                  <div className="flex items-center gap-1">
-                    <DollarSign size={12} className="text-blue-500" />
-                    <p className="font-bold text-slate-900">{formatCurrency(getClientTotalDebt(client.id))}</p>
-                  </div>
-                </div>
-                <div>
-                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Documento</label>
-                   <p className="text-xs font-medium text-slate-600">{client.document || '---'}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl">
-                  <Phone size={14} className="text-slate-400" />
-                  <span className="text-sm font-medium text-slate-700">{client.phone}</span>
-                </div>
-                {client.email && (
-                  <div className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl">
-                    <Mail size={14} className="text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700 truncate">{client.email}</span>
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -424,6 +434,16 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
                       onChange={(e) => setCurrentClient({...currentClient, email: e.target.value})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                       placeholder="email@exemplo.com"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cidade</label>
+                    <input 
+                      type="text" 
+                      value={currentClient?.city || ''}
+                      onChange={(e) => setCurrentClient({...currentClient, city: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      placeholder="Ex: São Paulo"
                     />
                   </div>
                   <div className="col-span-2">

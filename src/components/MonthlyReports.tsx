@@ -67,10 +67,11 @@ export default function MonthlyReports() {
     const client = clients[debt.clientId];
     const nameMatch = client?.name.toLowerCase().includes(searchTerm.toLowerCase());
     const docMatch = client?.document?.toLowerCase().includes(searchTerm.toLowerCase());
+    const cityMatch = client?.city?.toLowerCase().includes(searchTerm.toLowerCase());
     const descMatch = debt.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const statusMatch = statusFilter === 'ALL' || debt.status === statusFilter;
 
-    return (nameMatch || docMatch || descMatch) && statusMatch;
+    return (nameMatch || docMatch || cityMatch || descMatch) && statusMatch;
   }).sort((a, b) => {
     const dateA = a.dueDate instanceof Timestamp ? a.dueDate.toDate() : new Date(a.dueDate);
     const dateB = b.dueDate instanceof Timestamp ? b.dueDate.toDate() : new Date(b.dueDate);
@@ -95,26 +96,26 @@ export default function MonthlyReports() {
   return (
     <div className="space-y-8 pb-10">
       {/* Header & Month Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
         <div>
-          <h3 className="text-2xl font-bold text-slate-900">Relatório Mensal</h3>
-          <p className="text-slate-500 text-sm">Histórico detalhado de faturamentos e recebimentos.</p>
+          <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Relatório Mensal</h3>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Check-up completo de movimentações</p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-2 glass p-1.5 rounded-[1.5rem] shadow-xl shadow-blue-900/5">
            <button 
              onClick={() => changeMonth(-1)}
-             className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-blue-600"
+             className="p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-blue-600 shadow-sm md:shadow-none"
            >
              <ChevronLeft size={20} />
            </button>
-           <div className="px-4 py-1 text-center min-w-[150px]">
-             <p className="text-sm font-bold text-slate-900">{MONTHS[selectedDate.getMonth()]}</p>
-             <p className="text-[10px] font-black text-blue-600 tracking-widest">{selectedDate.getFullYear()}</p>
+           <div className="px-6 py-1 text-center min-w-[160px]">
+             <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">{MONTHS[selectedDate.getMonth()]}</p>
+             <p className="text-[10px] font-black text-blue-600 tracking-[0.2em]">{selectedDate.getFullYear()}</p>
            </div>
            <button 
              onClick={() => changeMonth(1)}
-             className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-blue-600"
+             className="p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-blue-600 shadow-sm md:shadow-none"
            >
              <ChevronRight size={20} />
            </button>
@@ -123,137 +124,181 @@ export default function MonthlyReports() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="glass p-8 rounded-[2.5rem] relative overflow-hidden group border-none shadow-2xl shadow-blue-900/5">
           <div className="relative z-10">
-             <div className="p-3 bg-blue-50 text-blue-600 w-fit rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-               <DollarSign size={24} />
+             <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-xl shadow-slate-200">
+               <DollarSign size={28} />
              </div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Total Faturado</p>
-             <h4 className="text-3xl font-black text-slate-900 mt-1">{formatCurrency(stats.total)}</h4>
-             <p className="text-[10px] text-slate-400 mt-2 font-medium">{stats.count} registros no mês</p>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mb-2">Total Faturado</p>
+             <h4 className="text-4xl font-black text-slate-900 leading-none tracking-tighter">{formatCurrency(stats.total)}</h4>
+             <div className="mt-6 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{stats.count} Registros</p>
+             </div>
           </div>
-          <DollarSign className="absolute -right-4 -bottom-4 w-32 h-32 text-blue-50/50 -rotate-12" />
+          <DollarSign className="absolute -right-6 -bottom-6 w-40 h-40 text-slate-900/5 -rotate-12" />
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="glass p-8 rounded-[2.5rem] relative overflow-hidden group border-none shadow-2xl shadow-blue-900/5">
           <div className="relative z-10">
-             <div className="p-3 bg-emerald-50 text-emerald-600 w-fit rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-               <TrendingUp size={24} />
+             <div className="w-14 h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-xl shadow-emerald-100">
+               <TrendingUp size={28} />
              </div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Total Recebido (PIX/Dinheiro)</p>
-             <h4 className="text-3xl font-black text-emerald-600 mt-1">{formatCurrency(stats.paid)}</h4>
-             <p className="text-[10px] text-emerald-400 mt-2 font-medium">{stats.paidCount} pagamentos concluídos</p>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mb-2">Total Recebido</p>
+             <h4 className="text-4xl font-black text-emerald-600 leading-none tracking-tighter">{formatCurrency(stats.paid)}</h4>
+             <div className="mt-6 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">{stats.paidCount} Pagos</p>
+             </div>
           </div>
-          <CheckCircle2 className="absolute -right-4 -bottom-4 w-32 h-32 text-emerald-50/50 -rotate-12" />
+          <CheckCircle2 className="absolute -right-6 -bottom-6 w-40 h-40 text-emerald-500/5 -rotate-12" />
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden group">
+        <div className="glass p-8 rounded-[2.5rem] relative overflow-hidden group border-none shadow-2xl shadow-blue-900/5">
           <div className="relative z-10">
-             <div className="p-3 bg-red-50 text-red-500 w-fit rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-               <TrendingDown size={24} />
+             <div className="w-14 h-14 bg-red-500 text-white rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-xl shadow-red-100">
+               <TrendingDown size={28} />
              </div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Aguardando Recebimento</p>
-             <h4 className="text-3xl font-black text-red-500 mt-1">{formatCurrency(stats.pending)}</h4>
-             <p className="text-[10px] text-red-400 mt-2 font-medium">{stats.count - stats.paidCount} pendências</p>
+             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest leading-none mb-2">Pendente</p>
+             <h4 className="text-4xl font-black text-red-500 leading-none tracking-tighter">{formatCurrency(stats.pending)}</h4>
+             <div className="mt-6 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest">{stats.count - stats.paidCount} Em aberto</p>
+             </div>
           </div>
-          <AlertCircle className="absolute -right-4 -bottom-4 w-32 h-32 text-red-50/50 -rotate-12" />
+          <AlertCircle className="absolute -right-6 -bottom-6 w-40 h-40 text-red-500/5 -rotate-12" />
         </div>
       </div>
 
-      {/* Main Records Table */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
-        <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex items-center gap-2">
-             <FileText size={20} className="text-slate-400" />
-             <h4 className="font-bold text-slate-800">Registros de {MONTHS[selectedDate.getMonth()]}</h4>
+      {/* Main Records */}
+      <div className="space-y-4">
+        <div className="glass p-2 rounded-[2rem] flex flex-col md:flex-row gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input 
+              type="text" 
+              placeholder="Pesquisar por devedor ou cidade..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-white/50 border border-transparent rounded-[1.5rem] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold placeholder:text-slate-400 placeholder:font-medium"
+            />
           </div>
-
-          <div className="flex gap-2 w-full md:w-auto">
-             <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                <input 
-                  type="text"
-                  placeholder="Pesquisar registros..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border-none rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-             </div>
-             <select 
-               value={statusFilter}
-               onChange={(e) => setStatusFilter(e.target.value)}
-               className="px-3 py-2 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-500 outline-none"
-             >
-                <option value="ALL">Todos Status</option>
-                <option value="PENDING">A Vencer</option>
-                <option value="OVERDUE">Vencidos</option>
-                <option value="COLLECTING">Em Cobrança</option>
-                <option value="PAID">Pagos</option>
-             </select>
-          </div>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-6 py-4 bg-white/80 border-none rounded-[1.5rem] text-xs font-black text-slate-500 outline-none uppercase tracking-widest appearance-none min-w-[180px] text-center"
+          >
+            <option value="ALL">TODOS STATUS</option>
+            <option value="PENDING">A VENCER</option>
+            <option value="OVERDUE">VENCIDOS</option>
+            <option value="COLLECTING">COBRANÇA</option>
+            <option value="PAID">PAGOS</option>
+          </select>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block glass rounded-[2.5rem] overflow-hidden border-none shadow-2xl shadow-blue-900/5">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                <th className="px-6 py-4">Devedor</th>
-                <th className="px-6 py-4">Descrição</th>
-                <th className="px-6 py-4">Data Venc.</th>
-                <th className="px-6 py-4">Valor</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Última Atualiz.</th>
+              <tr className="border-b border-slate-100">
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Devedor & Origem</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Lançamento</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Vencimento</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Valor</th>
+                <th className="px-8 py-6 font-black text-slate-400 uppercase tracking-widest text-[10px]">Situação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredDebts.map((debt) => {
                 const client = clients[debt.clientId];
                 const StatusIcon = statusMap[debt.status].icon;
-                const updatedAt = debt.updatedAt instanceof Timestamp ? debt.updatedAt.toDate() : new Date(debt.updatedAt);
                 
                 return (
-                  <tr key={debt.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                          <User size={14} />
+                  <tr key={debt.id} className="hover:bg-blue-50/30 transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shadow-sm">
+                          <User size={18} />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-900 leading-none mb-1">{client?.name || '---'}</p>
-                          <p className="text-[10px] text-slate-400">{client?.document || 'Sem documento'}</p>
+                          <p className="text-base font-black text-slate-900 tracking-tight leading-none mb-1">{client?.name || '---'}</p>
+                          <div className="flex items-center gap-2">
+                             {client?.city && (
+                               <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest italic">{client.city}</p>
+                             )}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                       <p className="text-xs text-slate-600 line-clamp-1">{debt.description || 'Sem descrição'}</p>
+                    <td className="px-8 py-6">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{debt.description || 'LANÇAMENTO ÚNICO'}</p>
                     </td>
-                    <td className="px-6 py-4">
-                       <p className="text-xs font-medium text-slate-500">{formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate)}</p>
+                    <td className="px-8 py-6">
+                       <p className="text-xs font-black text-slate-700">{formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate)}</p>
                     </td>
-                    <td className="px-6 py-4">
-                       <p className="text-sm font-black text-slate-900">{formatCurrency(debt.amount)}</p>
+                    <td className="px-8 py-6">
+                       <p className="text-lg font-black text-slate-900">{formatCurrency(debt.amount)}</p>
                     </td>
-                    <td className="px-6 py-4">
-                       <div className={cn("inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider", statusMap[debt.status].color)}>
-                          <StatusIcon size={12} />
+                    <td className="px-8 py-6">
+                       <div className={cn("inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.1em] shadow-sm bg-white", statusMap[debt.status].color)}>
+                          <StatusIcon size={12} strokeWidth={3} />
                           {statusMap[debt.status].label}
                        </div>
-                    </td>
-                    <td className="px-6 py-4">
-                       <p className="text-[10px] text-slate-400">{updatedAt.toLocaleString('pt-BR')}</p>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {filteredDebts.length === 0 && (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-300">
-               <FileText size={48} className="opacity-10 mb-4" />
-               <p className="text-xs font-bold uppercase tracking-widest">Nenhum registro encontrado</p>
-            </div>
-          )}
         </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden space-y-4 px-2">
+          {filteredDebts.map((debt) => {
+             const client = clients[debt.clientId];
+             const StatusIcon = statusMap[debt.status].icon;
+             return (
+               <div key={debt.id} className="glass p-6 rounded-[2.5rem] border-none shadow-xl shadow-blue-900/5">
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="min-w-0">
+                      <p className="text-lg font-black text-slate-900 tracking-tight leading-none truncate mb-1">{client?.name || '---'}</p>
+                      {client?.city && <p className="text-[9px] font-black text-blue-500 uppercase italic leading-none">{client.city}</p>}
+                    </div>
+                    <div className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-sm bg-white shrink-0", statusMap[debt.status].color)}>
+                        <StatusIcon size={10} strokeWidth={3} />
+                        {statusMap[debt.status].label}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-white p-4 rounded-2xl border border-slate-50">
+                       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Valor Parcela</label>
+                       <p className="text-lg font-black text-blue-600 leading-none">{formatCurrency(debt.amount)}</p>
+                    </div>
+                    <div className="bg-white p-4 rounded-2xl border border-slate-50 text-right">
+                       <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Vencimento</label>
+                       <p className="text-xs font-black text-slate-900 leading-none">{formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate)}</p>
+                    </div>
+                  </div>
+
+                  {debt.description && (
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-500 truncate"><span className="text-slate-400 mr-2">REF:</span>{debt.description}</p>
+                    </div>
+                  )}
+               </div>
+             );
+          })}
+        </div>
+
+        {filteredDebts.length === 0 && (
+          <div className="py-20 glass rounded-[2.5rem] flex flex-col items-center justify-center text-slate-300 border-none shadow-xl shadow-blue-900/5">
+             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                <FileText size={40} className="opacity-20" />
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-widest">Nenhum registro para este período</p>
+          </div>
+        )}
       </div>
     </div>
   );

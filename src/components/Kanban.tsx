@@ -11,10 +11,12 @@ import {
   AlertCircle,
   HelpCircle,
   Plus,
-  Trash2
+  Trash2,
+  X as CloseIcon
 } from 'lucide-react';
 import { cn, formatCurrency, formatDate } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
+import WhatsAppModal from './WhatsAppModal';
 
 interface Column {
   id: DebtStatus;
@@ -39,6 +41,7 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [whatsappData, setWhatsappData] = useState<{ isOpen: boolean; clientName: string; phone: string; amount: number } | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -108,41 +111,36 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
   };
 
   return (
-    <div className="h-full flex flex-col gap-6">
+    <div className="h-full flex flex-col gap-8 pb-10">
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center justify-between">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl flex items-center justify-between shadow-lg shadow-red-200/20">
           <div className="flex items-center gap-3">
             <AlertCircle className="text-red-500" size={20} />
-            <p className="text-sm text-red-700 font-medium">{error}</p>
+            <p className="text-sm text-red-700 font-bold">{error}</p>
           </div>
-          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
-            <span className="sr-only">Fechar</span>
-            <HelpCircle size={14} className="rotate-45" /> 
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 p-1">
+            <CloseIcon size={18} /> 
           </button>
         </div>
       )}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-bold text-slate-900">Pipeline de Recuperação</h3>
-          <p className="text-slate-500 text-sm">Arraste as dívidas para mudar o status da cobrança.</p>
+
+      {/* Kanban Header */}
+      <div className="flex items-center justify-between px-2">
+        <div className="hidden md:block">
+          <h3 className="text-xl font-black text-slate-800 tracking-tight">Fluxo de Cobrança</h3>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mt-1">Gerenciamento por Pipeline</p>
         </div>
-        <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-white/40 backdrop-blur-sm p-1.5 rounded-full border border-white/30">
-                <img 
-                  src={user?.photoURL || `https://ui-avatars.com/api/?name=${user?.displayName}`} 
-                  className="w-8 h-8 rounded-full border border-white" 
-                  alt={user?.displayName || 'User'} 
-                />
-                <div className="pr-3">
-                  <p className="text-[10px] font-bold text-slate-700 leading-tight">ONLINE</p>
-                  <p className="text-[9px] text-slate-500 leading-tight">Operador</p>
-                </div>
-            </div>
+        
+        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-black text-[10px]">
+             {debts.length}
+          </div>
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-2">Total de Dívidas</span>
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory md:snap-none">
-        <div className="flex gap-4 md:gap-6 h-full min-w-max md:min-w-[1200px]">
+      <div className="flex-1 overflow-x-auto pb-8 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory scrollbar-hide">
+        <div className="flex gap-4 md:gap-8 h-full min-w-max">
           {COLUMNS.map((column) => {
             const columnDebts = debts.filter(d => {
               const statusMatch = d.status === column.id;
@@ -152,22 +150,19 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
               return statusMatch && (searchTerm === '' || nameMatch || docMatch || descMatch);
             });
             return (
-              <div key={column.id} className="w-[85vw] md:flex-1 md:min-w-[280px] flex flex-col gap-4 snap-center">
-                <div className="flex items-center justify-between px-2">
-                  <div className="flex items-center gap-2">
-                    <span className={cn("w-2 h-2 rounded-full", column.color)}></span>
-                    <h4 className="font-semibold text-slate-700 text-sm">{column.title}</h4>
-                    <span className="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                      {columnDebts.length}
-                    </span>
+              <div key={column.id} className="w-[82vw] md:w-80 flex flex-col gap-6 snap-center first:ml-2 last:mr-2">
+                <div className="flex items-center justify-between px-3">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-3 h-3 rounded-full ring-4 ring-white shadow-sm", column.color)} />
+                    <h4 className="font-black text-slate-900 text-sm uppercase tracking-tighter">{column.title}</h4>
                   </div>
-                  <button className="text-slate-400 hover:text-slate-600">
-                    <MoreHorizontal size={16} />
-                  </button>
+                  <div className="bg-slate-900 text-white text-[9px] px-2 py-0.5 rounded-md font-black shadow-md">
+                    {columnDebts.length}
+                  </div>
                 </div>
 
                 <div 
-                  className="flex-1 bg-white/20 backdrop-blur-sm rounded-2xl p-3 border-2 border-dashed border-white/30 space-y-3"
+                  className="flex-1 glass rounded-[2.5rem] p-4 space-y-4 border-2 border-transparent transition-all overflow-y-auto min-h-[300px]"
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => {
                     const id = (window as any).draggedDebtId;
@@ -185,13 +180,16 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
                       settings={settings}
                       onMove={(status) => moveDebt(debt.id, status)}
                       onDelete={() => setShowDeleteConfirm(debt.id)}
+                      onWhatsApp={(data) => setWhatsappData({ isOpen: true, ...data })}
                     />
                   ))}
                   
                   {columnDebts.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-32 text-slate-400 gap-2">
-                      <HelpCircle size={24} strokeWidth={1.5} />
-                      <p className="text-xs">Nenhum registro</p>
+                    <div className="flex flex-col items-center justify-center h-48 text-slate-300 gap-4">
+                      <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-200 flex items-center justify-center">
+                        <HelpCircle size={24} strokeWidth={1} />
+                      </div>
+                      <p className="text-[10px] font-black uppercase tracking-widest">Coluna Vazia</p>
                     </div>
                   )}
                 </div>
@@ -243,6 +241,15 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
           </div>
         )}
       </AnimatePresence>
+
+      <WhatsAppModal 
+        isOpen={!!whatsappData?.isOpen}
+        onClose={() => setWhatsappData(null)}
+        clientName={whatsappData?.clientName || ''}
+        phone={whatsappData?.phone || ''}
+        amount={whatsappData?.amount || 0}
+        settings={settings}
+      />
     </div>
   );
 }
@@ -254,24 +261,19 @@ interface DebtCardProps {
   settings?: SystemSettings | null;
   onMove: (status: DebtStatus) => Promise<void>;
   onDelete: () => Promise<void>;
+  onWhatsApp: (data: { clientName: string; phone: string; amount: number }) => void;
 }
 
-function DebtCard({ debt, client, settings, onMove, onDelete }: DebtCardProps) {
+function DebtCard({ debt, client, settings, onMove, onDelete, onWhatsApp }: DebtCardProps) {
   const [showOptions, setShowOptions] = useState(false);
 
   const handleWhatsAppClick = () => {
     if (!client) return;
-    
-    let message = `Olá ${client.name}, este é um lembrete da sua fatura no valor de ${formatCurrency(debt.amount)} que está em atraso. Por favor, regularize sua situação para evitar juros.`;
-    
-    if (settings?.pixKey) {
-      message += `\n\nVocê pode pagar via PIX:\nChave: ${settings.pixKey}\nTipo: ${settings.pixKeyType}\nNome: ${settings.receiverName}`;
-    }
-
-    const encodedMessage = encodeURIComponent(message);
-    const formattedPhone = client.phone.replace(/\D/g, '');
-    const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`;
-    window.open(url, '_blank');
+    onWhatsApp({
+      clientName: client.name,
+      phone: client.phone,
+      amount: debt.amount
+    });
   };
 
   const getDueDateStatus = () => {

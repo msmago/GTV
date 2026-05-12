@@ -74,20 +74,20 @@ export default function Settings() {
 
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <div className="mb-8">
-        <h3 className="text-2xl font-bold text-slate-900">Configurações de Recebimento</h3>
-        <p className="text-slate-500 text-sm">Configure seus dados de PIX para facilitar o pagamento dos seus clientes.</p>
+      <div className="mb-10 px-2">
+        <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Configurações</h3>
+        <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Dados de Recebimento e Chave PIX</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        <div className="card-glass p-8 rounded-3xl border border-white/40 shadow-xl space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="glass p-8 rounded-[2.5rem] border-none shadow-2xl shadow-blue-900/5 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="col-span-full md:col-span-1">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Tipo de Chave</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Tipo de Chave</label>
               <select
                 value={settings.pixKeyType}
                 onChange={(e) => setSettings({ ...settings, pixKeyType: e.target.value as any })}
-                className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none"
+                className="w-full px-5 py-4 bg-white/50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all appearance-none font-bold text-sm"
               >
                 <option value="CPF_CNPJ">CPF/CNPJ</option>
                 <option value="EMAIL">Email</option>
@@ -97,46 +97,46 @@ export default function Settings() {
             </div>
 
             <div className="col-span-full md:col-span-1">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Valor da Chave PIX</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Valor da Chave PIX</label>
               <div className="relative">
-                <QrCode className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <QrCode className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   required
                   type="text"
                   value={settings.pixKey}
                   onChange={(e) => setSettings({ ...settings, pixKey: e.target.value })}
-                  placeholder="Ex: 83999999999"
-                  className="w-full pl-12 pr-5 py-4 bg-white/50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                  placeholder="Sua chave aqui"
+                  className="w-full pl-14 pr-5 py-4 bg-white/50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-sm"
                 />
               </div>
             </div>
 
             <div className="col-span-full">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Nome do Recebedor</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Nome Completo do Titular</label>
               <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   required
                   type="text"
                   value={settings.receiverName}
                   onChange={(e) => setSettings({ ...settings, receiverName: e.target.value })}
-                  placeholder="Ex: Empresa X"
-                  className="w-full pl-12 pr-5 py-4 bg-white/50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                  placeholder="Como aparece no banco"
+                  className="w-full pl-14 pr-5 py-4 bg-white/50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-sm"
                 />
               </div>
             </div>
 
             <div className="col-span-full">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Cidade do Recebedor</label>
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Cidade da Agência</label>
               <div className="relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input
                   required
                   type="text"
                   value={settings.city}
                   onChange={(e) => setSettings({ ...settings, city: e.target.value })}
-                  placeholder="Ex: João Pessoa"
-                  className="w-full pl-12 pr-5 py-4 bg-white/50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all"
+                  placeholder="Ex: São Paulo"
+                  className="w-full pl-14 pr-5 py-4 bg-white/50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-sm"
                 />
               </div>
             </div>
@@ -147,18 +147,18 @@ export default function Settings() {
               disabled={saving}
               type="submit"
               className={cn(
-                "w-full py-4.5 flex items-center justify-center gap-3 rounded-2xl font-bold text-sm tracking-wide transition-all shadow-xl active:scale-[0.98]",
+                "w-full py-5 flex items-center justify-center gap-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl active:scale-[0.98]",
                 saving 
                   ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
-                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"
+                  : "bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200"
               )}
             >
               {saving ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-500"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
               ) : (
                 <Save size={18} />
               )}
-              {saving ? 'SALVANDO...' : 'SALVAR CONFIGURAÇÕES'}
+              {saving ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
             </button>
           </div>
         </div>

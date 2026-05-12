@@ -5,6 +5,7 @@ export interface Client {
   name: string;
   email?: string;
   phone: string;
+  city?: string;
   document?: string;
   notes?: string;
   createdAt: any;

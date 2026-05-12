@@ -37,6 +37,7 @@ service cloud.firestore {
         return isNonEmptyString(data.name, 200) &&
                isNonEmptyString(data.phone, 32) &&
                (!('email' in data) || data.email is string) &&
+               (!('city' in data) || data.city is string) &&
                (!('document' in data) || data.document is string) &&
                (!('notes' in data) || data.notes is string);
       }

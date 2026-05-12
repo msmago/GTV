@@ -7,34 +7,42 @@
 
 @layer base {
   body {
-    @apply antialiased font-sans text-slate-800 h-screen overflow-hidden;
-    background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 50%, #eff6ff 100%);
+    @apply antialiased font-sans text-slate-900;
+    @apply md:h-screen md:overflow-hidden;
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(210,100%,96%,1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(225,100%,97%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(210,100%,96%,1) 0, transparent 50%);
   }
 }
 
 @layer utilities {
   .glass {
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
   }
 
   .sidebar-item-active {
-    background: rgba(37, 99, 235, 0.1);
-    border-right: 3px solid #2563eb;
-    color: #1d4ed8;
+    background: white;
+    color: #2563eb;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 
   .card-glass {
-    background: rgba(255, 255, 255, 0.7);
-    transition: all 0.2s ease;
+    background: white;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .card-glass:hover {
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border-color: #e2e8f0;
   }
 }
 

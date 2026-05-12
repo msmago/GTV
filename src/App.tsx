@@ -254,166 +254,176 @@ export default function App() {
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans text-slate-800 bg-slate-50 md:p-4 md:gap-4 flex-col md:flex-row">
-      {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-white/80 backdrop-blur-md border-b border-slate-200 z-50">
+    <div className="flex h-[100dvh] w-full md:overflow-hidden font-sans text-slate-800 bg-[#f8fafc] flex-col md:flex-row">
+      
+      {/* Mobile Top Header (Branding) */}
+      <div className="md:hidden flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-xl border-b border-white z-50 shrink-0">
         <div className="flex items-center gap-2 text-blue-600 font-bold">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
-            <CreditCard size={18} />
+          <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200">
+            <CreditCard size={20} />
           </div>
-          <span>G. Inadimplentes</span>
+          <span className="tracking-tight text-slate-900">G. Inadimplentes</span>
         </div>
-        <div className="flex items-center gap-2">
-          <NotificationCenter />
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
-          >
-            {isMobileMenuOpen ? <CloseIcon size={24} /> : <Menu size={24} />}
-          </button>
+        <div className="flex items-center gap-3">
+          <img 
+            src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
+            className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+            alt={user.displayName || 'User'}
+            onClick={() => setActiveView('settings')}
+          />
         </div>
       </div>
 
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-slate-200 px-4 pb-4 overflow-hidden"
-          >
-             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <input 
-                type="text" 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar clientes ou dívidas..."
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar Overlay (Mobile) */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden"
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-72 bg-white md:bg-white/40 md:backdrop-blur-xl md:glass md:rounded-3xl flex flex-col p-6 h-full overflow-hidden shrink-0 z-50 transition-transform duration-300 transform md:relative md:translate-x-0 md:p-6",
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-      )}>
-        <div className="p-4 hidden md:block">
+      {/* Sidebar (Desktop) */}
+      <aside className="hidden md:flex w-72 bg-white flex-col p-6 h-full overflow-hidden shrink-0 z-50 border-r border-slate-200">
+        <div className="p-4 mb-4">
           <div className="flex items-center gap-3 text-blue-600 font-bold text-xl">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center">
-              <CreditCard size={18} />
+            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xl shadow-blue-200 transition-transform hover:scale-105 active:scale-95 cursor-default">
+              <CreditCard size={22} />
             </div>
-            <span>G. Inadimplentes</span>
+            <span className="tracking-tight text-slate-900">Management</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 md:px-0 space-y-1 mt-8 md:mt-0">
+        <nav className="flex-1 space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
-                onClick={() => { setActiveView(item.id as View); setIsMobileMenuOpen(false); }}
+                onClick={() => setActiveView(item.id as View)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-4 md:py-3 rounded-xl text-sm font-medium transition-all mb-1",
+                  "w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-[13px] font-bold transition-all mb-1",
                   activeView === item.id 
-                    ? "sidebar-item-active" 
-                    : "text-slate-500 hover:bg-white/50 hover:text-slate-900"
+                    ? "sidebar-item-active shadow-xl shadow-blue-500/10" 
+                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                 )}
               >
-                <Icon size={20} />
+                <Icon size={18} />
                 {item.label}
               </button>
             );
           })}
         </nav>
 
-        <div className="p-4 glass md:bg-transparent rounded-2xl mt-auto border border-white/40 md:border-none">
-          <div className="flex items-center gap-3 px-4 py-3 bg-white/60 md:bg-white/40 backdrop-blur-sm rounded-xl mb-3 border border-white/50">
+        <div className="p-4 rounded-3xl mt-auto bg-slate-50 border border-slate-100">
+          <div className="flex items-center gap-3 px-3 py-2 bg-white rounded-2xl mb-4 shadow-sm border border-slate-100">
             <img 
               src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
-              className="w-10 h-10 md:w-8 md:h-8 rounded-full border border-white shadow-sm"
+              className="w-10 h-10 rounded-full border border-white shadow-sm"
               alt={user.displayName || 'User'}
             />
             <div className="flex-1 min-w-0">
-              <p className="text-sm md:text-xs font-bold truncate">{user.displayName}</p>
-              <p className="text-[10px] text-slate-500 truncate uppercase tracking-wider">Operador Admin</p>
+              <p className="text-xs font-black truncate text-slate-900">{user.displayName}</p>
+              <p className="text-[9px] text-slate-400 truncate uppercase tracking-widest font-black">Admin Mode</p>
             </div>
           </div>
           <button 
             onClick={logout}
-            className="w-full flex items-center gap-3 px-4 py-3 md:py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
+            className="w-full flex items-center justify-center gap-3 py-3 text-xs font-black text-red-500 hover:bg-red-50 rounded-2xl transition-all uppercase tracking-widest"
           >
-            <LogOut size={18} />
-            Sair do Sistema
+            <LogOut size={16} />
+            Sair agora
           </button>
         </div>
       </aside>
 
+      {/* Mobile Bottom Nav */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-2xl border-t border-slate-100 px-6 flex items-center justify-between z-50 safe-area-inset-bottom">
+        {menuItems.slice(0, 4).map((item) => { // Show first 4 most important
+          const Icon = item.icon;
+          const isActive = activeView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveView(item.id as View)}
+              className={cn(
+                "flex flex-col items-center gap-1 transition-all",
+                isActive ? "text-blue-600" : "text-slate-400"
+              )}
+            >
+              <div className={cn(
+                "p-2 rounded-xl transition-all",
+                isActive ? "bg-blue-50" : ""
+              )}>
+                <Icon size={20} weight={isActive ? "fill" : "regular"} />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-tight">{item.label.split(' ')[0]}</span>
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setActiveView('settings')}
+          className={cn(
+            "flex flex-col items-center gap-1 transition-all",
+            activeView === 'settings' ? "text-blue-600" : "text-slate-400"
+          )}
+        >
+          <div className={cn(
+            "p-2 rounded-xl transition-all",
+            activeView === 'settings' ? "bg-blue-50" : ""
+          )}>
+            <Settings size={20} />
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
+        </button>
+      </nav>
+
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:gap-4">
+      <main className="flex-1 flex flex-col min-w-0 md:overflow-hidden md:p-6 pb-24 md:pb-6 relative h-full">
         {overdueCount > 0 && (
           <motion.div 
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            className="bg-red-600 text-white px-6 py-2 flex items-center justify-between md:rounded-2xl"
+            className="bg-red-600 text-white px-6 py-3 flex items-center justify-between md:rounded-[1.5rem] mb-4 shadow-xl shadow-red-200 transition-all hover:scale-[1.01]"
           >
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-              <AlertCircle size={14} />
-              Atenção: Você possui {overdueCount} {overdueCount === 1 ? 'dívida vencida' : 'dívidas vencidas'} aguardando ação.
+            <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-widest">
+              <AlertCircle size={16} />
+              Atenção: {overdueCount} {overdueCount === 1 ? 'dívida vencida' : 'dívidas vencidas'} aguardando ação.
             </div>
             <button 
               onClick={() => setActiveView('debts')}
-              className="text-[10px] font-black underline underline-offset-4 hover:text-red-100"
+              className="text-[10px] font-black bg-white/20 px-3 py-1.5 rounded-lg hover:bg-white/30 transition-all"
             >
               RESOLVER AGORA
             </button>
           </motion.div>
         )}
+        
         {/* Header (Desktop Only) */}
-        <header className="hidden md:flex h-16 glass rounded-2xl items-center justify-between px-6 shrink-0">
+        <header className="hidden md:flex h-20 items-center justify-between px-2 shrink-0 mb-6">
           <div className="flex items-center gap-4 flex-1">
-            <h2 className="text-lg font-bold text-blue-900 capitalize shrink-0">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tighter">
               {menuItems.find(m => m.id === activeView)?.label || activeView}
             </h2>
           </div>
-          
-          <div className="flex items-center gap-4 shrink-0 relative">
-            {/* NotificationCenter removed */}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <img 
+                src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
+                className="w-10 h-10 rounded-full border-2 border-white shadow-lg cursor-pointer transition-transform group-hover:scale-110"
+                alt={user.displayName || 'User'}
+              />
+            </div>
           </div>
         </header>
 
         {/* View Content */}
-        <div className="flex-1 overflow-y-auto glass md:rounded-3xl p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto px-4 md:px-2 touch-pan-y">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeView}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="h-full"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="min-h-full"
             >
-              <div className="md:hidden mb-6">
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <div className="md:hidden mt-4 mb-8 px-2">
+                <h2 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">
                   {menuItems.find(m => m.id === activeView)?.label || activeView}
                 </h2>
+                <div className="w-12 h-1.5 bg-blue-600 rounded-full mt-3" />
               </div>
               {activeView === 'dashboard' && <Dashboard />}
               {activeView === 'kanban' && <Kanban searchTerm={searchTerm} />}

@@ -8,6 +8,7 @@
         "name": { "type": "string", "description": "Full name" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
+        "city": { "type": "string" },
         "document": { "type": "string", "description": "CPF or CNPJ" },
         "notes": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
