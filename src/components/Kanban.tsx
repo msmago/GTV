@@ -36,6 +36,7 @@ const COLUMNS: Column[] = [
 export default function Kanban({ searchTerm = '' }: KanbanProps) {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const { user } = useAuth();
@@ -52,6 +53,19 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
       });
       setClients(clientMap);
     });
+
+    const fetchSettings = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'pix_config');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setSettings(docSnap.data() as SystemSettings);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+    fetchSettings();
 
     return () => {
       unsubscribeDebts();
@@ -168,6 +182,7 @@ export default function Kanban({ searchTerm = '' }: KanbanProps) {
                       key={debt.id} 
                       debt={debt} 
                       client={clients[debt.clientId]} 
+                      settings={settings}
                       onMove={(status) => moveDebt(debt.id, status)}
                       onDelete={() => setShowDeleteConfirm(debt.id)}
                     />
@@ -236,27 +251,17 @@ interface DebtCardProps {
   key?: string;
   debt: Debt;
   client?: Client;
+  settings?: SystemSettings | null;
   onMove: (status: DebtStatus) => Promise<void>;
   onDelete: () => Promise<void>;
 }
 
-function DebtCard({ debt, client, onMove, onDelete }: DebtCardProps) {
+function DebtCard({ debt, client, settings, onMove, onDelete }: DebtCardProps) {
   const [showOptions, setShowOptions] = useState(false);
 
-  const handleWhatsAppClick = async () => {
+  const handleWhatsAppClick = () => {
     if (!client) return;
     
-    let settings: SystemSettings | null = null;
-    try {
-      const docRef = doc(db, 'settings', 'pix_config');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        settings = docSnap.data() as SystemSettings;
-      }
-    } catch (err) {
-      console.error("Error fetching PIX settings for message:", err);
-    }
-
     let message = `Olá ${client.name}, este é um lembrete da sua fatura no valor de ${formatCurrency(debt.amount)} que está em atraso. Por favor, regularize sua situação para evitar juros.`;
     
     if (settings?.pixKey) {

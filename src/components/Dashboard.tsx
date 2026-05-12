@@ -24,27 +24,10 @@ const generateWhatsAppMessage = (name: string, amount: number, settings: SystemS
   return encodeURIComponent(message);
 };
 
-const handleWhatsAppClick = async (phone: string, name: string, amount: number) => {
-  let settings: SystemSettings | null = null;
-  try {
-    const docRef = doc(db, 'settings', 'pix_config');
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      settings = docSnap.data() as SystemSettings;
-    }
-  } catch (err) {
-    console.error("Error fetching PIX settings for message:", err);
-  }
-
-  const encodedMessage = generateWhatsAppMessage(name, amount, settings);
-  const formattedPhone = phone.replace(/\D/g, '');
-  const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`;
-  window.open(url, '_blank');
-};
-
 export default function Dashboard() {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [clients, setClients] = useState<Record<string, Client>>({});
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -60,11 +43,31 @@ export default function Dashboard() {
       setClients(clientMap);
     });
 
+    const fetchSettings = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'pix_config');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setSettings(docSnap.data() as SystemSettings);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+    fetchSettings();
+
     return () => {
       unsubscribeDebts();
       unsubscribeClients();
     };
   }, []);
+
+  const handleWhatsApp = (phone: string, name: string, amount: number) => {
+    const encodedMessage = generateWhatsAppMessage(name, amount, settings);
+    const formattedPhone = phone.replace(/\D/g, '');
+    const url = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedMessage}`;
+    window.open(url, '_blank');
+  };
 
   const totalReceivable = debts.reduce((acc, d) => d.status !== 'PAID' ? acc + d.amount : acc, 0);
   const totalOverdue = debts.reduce((acc, d) => d.status === 'OVERDUE' ? acc + d.amount : acc, 0);
@@ -157,7 +160,7 @@ export default function Dashboard() {
                     <p className="text-xs text-slate-500 mt-0.5">Dívida de <span className="font-bold text-slate-700">{formatCurrency(debt.amount)}</span></p>
                     <div className="flex items-center gap-3 mt-3">
                        <button 
-                         onClick={() => client && handleWhatsAppClick(client.phone, client.name, debt.amount)}
+                         onClick={() => client && handleWhatsApp(client.phone, client.name, debt.amount)}
                          className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-700 transition-all shadow-sm shadow-blue-100"
                        >
                          COBRAR AGORA

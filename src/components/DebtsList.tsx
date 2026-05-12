@@ -26,6 +26,7 @@ interface DebtsListProps {
 export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListProps) {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [search, setSearch] = useState(searchTerm);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
@@ -52,6 +53,19 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
     const unsubscribeClients = onSnapshot(query(collection(db, 'clients')), (snapshot) => {
       setClients(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Client)));
     });
+
+    const fetchSettings = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'pix_config');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setSettings(docSnap.data() as SystemSettings);
+        }
+      } catch (err) {
+        console.error("Error fetching settings:", err);
+      }
+    };
+    fetchSettings();
 
     return () => {
       unsubscribeDebts();
@@ -120,20 +134,9 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
     }
   };
 
-  const handleWhatsAppClick = async (clientId: string, amount: number) => {
+  const handleWhatsAppClick = (clientId: string, amount: number) => {
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
-
-    let settings: SystemSettings | null = null;
-    try {
-      const docRef = doc(db, 'settings', 'pix_config');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        settings = docSnap.data() as SystemSettings;
-      }
-    } catch (err) {
-      console.error("Error fetching PIX settings for message:", err);
-    }
 
     let message = `Olá ${client.name}, este é um lembrete da sua fatura no valor de ${formatCurrency(amount)} que está em atraso. Por favor, regularize sua situação para evitar juros.`;
     
