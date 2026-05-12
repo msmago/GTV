@@ -15,9 +15,10 @@ import {
   User,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
-import { cn, formatCurrency, formatDate } from '../lib/utils';
+import { cn, formatCurrency, formatDate, exportToExcel } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 const MONTHS = [
@@ -78,6 +79,21 @@ export default function MonthlyReports() {
     return dateA.getTime() - dateB.getTime();
   });
 
+  const handleExport = () => {
+    const dataToExport = filteredDebts.map(debt => ({
+      Devedor: clients[debt.clientId]?.name || '---',
+      Documento: clients[debt.clientId]?.document || '---',
+      Cidade: clients[debt.clientId]?.city || '---',
+      Descricao: debt.description || '---',
+      Vencimento: formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate),
+      Valor: debt.amount,
+      Status: statusMap[debt.status].label
+    }));
+    
+    const fileName = `Relatorio_${MONTHS[selectedDate.getMonth()]}_${selectedDate.getFullYear()}`;
+    exportToExcel(dataToExport, fileName);
+  };
+
   const stats = {
     total: filteredDebts.reduce((acc, d) => acc + d.amount, 0),
     paid: filteredDebts.reduce((acc, d) => d.status === 'PAID' ? acc + d.amount : acc, 0),
@@ -102,7 +118,16 @@ export default function MonthlyReports() {
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Check-up completo de movimentações</p>
         </div>
 
-        <div className="flex items-center gap-2 glass p-1.5 rounded-[1.5rem] shadow-xl shadow-blue-900/5">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleExport}
+            className="flex items-center justify-center gap-3 px-5 py-4 bg-white text-slate-900 rounded-[1.5rem] text-sm font-black uppercase tracking-widest shadow-xl shadow-blue-900/5 hover:bg-slate-50 transition-all border border-slate-100 active:scale-95"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">Exportar Excel</span>
+          </button>
+
+          <div className="flex items-center gap-2 glass p-1.5 rounded-[1.5rem] shadow-xl shadow-blue-900/5">
            <button 
              onClick={() => changeMonth(-1)}
              className="p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-blue-600 shadow-sm md:shadow-none"
@@ -118,11 +143,12 @@ export default function MonthlyReports() {
              className="p-3 hover:bg-white rounded-2xl transition-all text-slate-400 hover:text-blue-600 shadow-sm md:shadow-none"
            >
              <ChevronRight size={20} />
-           </button>
+          </button>
         </div>
       </div>
+    </div>
 
-      {/* Stats Cards */}
+    {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass p-8 rounded-[2.5rem] relative overflow-hidden group border-none shadow-2xl shadow-blue-900/5">
           <div className="relative z-10">

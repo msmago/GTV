@@ -15,9 +15,11 @@ import {
   Edit2,
   DollarSign,
   AlertCircle,
-  MapPin
+  MapPin,
+  Download,
+  Users
 } from 'lucide-react';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, exportToExcel } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ClientsListProps {
@@ -129,6 +131,19 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
     }
   };
 
+  const handleExport = () => {
+    const dataToExport = filteredClients.map(client => ({
+      Nome: client.name,
+      Documento: client.document || '---',
+      Email: client.email || '---',
+      Telefone: client.phone,
+      Cidade: client.city || '---',
+      Debito_Total: getClientTotalDebt(client.id)
+    }));
+    
+    exportToExcel(dataToExport, 'Clientes_Export');
+  };
+
   return (
     <div className="space-y-6">
       {error && (
@@ -147,13 +162,22 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
           <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Clientes</h3>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Gestão de Carteira e Contatos</p>
         </div>
-        <button 
-          onClick={() => { setCurrentClient({}); setShowModal(true); }}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95"
-        >
-          <UserPlus size={18} />
-          NOVO CLIENTE
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-5 py-4 bg-white text-slate-900 rounded-[1.5rem] text-sm font-black hover:bg-slate-50 transition-all shadow-xl shadow-blue-900/5 active:scale-95 border border-slate-100"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">EXPORTAR EXCEL</span>
+          </button>
+          <button 
+            onClick={() => { setCurrentClient({}); setShowModal(true); }}
+            className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95"
+          >
+            <UserPlus size={18} />
+            NOVO CLIENTE
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -481,6 +505,3 @@ export default function ClientsList({ createTrigger, searchTerm = '' }: ClientsL
     </div>
   );
 }
-
-import { Users as UIcons } from 'lucide-react';
-const Users = UIcons;

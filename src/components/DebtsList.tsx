@@ -13,9 +13,10 @@ import {
   Edit2,
   ChevronRight,
   Filter,
-  Smartphone
+  Smartphone,
+  Download
 } from 'lucide-react';
-import { cn, formatCurrency, formatDate } from '../lib/utils';
+import { cn, formatCurrency, formatDate, exportToExcel } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import WhatsAppModal from './WhatsAppModal';
 
@@ -136,6 +137,18 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
     }
   };
 
+  const handleExport = () => {
+    const dataToExport = filteredDebts.map(debt => ({
+      Devedor: getClientName(debt.clientId),
+      Valor: debt.amount,
+      Vencimento: debt.dueDate ? formatDate(debt.dueDate instanceof Timestamp ? debt.dueDate.toDate() : debt.dueDate) : '---',
+      Status: statusMap[debt.status].label,
+      Descricao: debt.description || '---'
+    }));
+    
+    exportToExcel(dataToExport, 'Dividas_Export');
+  };
+
   const handleWhatsAppClick = (clientId: string, amount: number) => {
     const client = clients.find(c => c.id === clientId);
     if (!client) return;
@@ -162,13 +175,22 @@ export default function DebtsList({ createTrigger, searchTerm = '' }: DebtsListP
           <h3 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Carteira de Dívidas</h3>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Lançamentos e Controle Financeiro</p>
         </div>
-        <button 
-          onClick={() => { setCurrentDebt({ status: 'PENDING' }); setShowModal(true); }}
-          className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95"
-        >
-          <Plus size={18} />
-          LANÇAR DÍVIDA
-        </button>
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-5 py-4 bg-white text-slate-900 rounded-[1.5rem] text-sm font-black hover:bg-slate-50 transition-all shadow-xl shadow-blue-900/5 active:scale-95 border border-slate-100"
+          >
+            <Download size={18} />
+            <span className="hidden sm:inline">EXPORTAR EXCEL</span>
+          </button>
+          <button 
+            onClick={() => { setCurrentDebt({ status: 'PENDING' }); setShowModal(true); }}
+            className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-[1.5rem] text-sm font-black hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95"
+          >
+            <Plus size={18} />
+            LANÇAR DÍVIDA
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
